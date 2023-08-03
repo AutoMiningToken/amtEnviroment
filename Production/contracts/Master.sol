@@ -37,6 +37,8 @@ contract liqLocker is TokenTimelock {
         uint256 releaseTime_,
         address masterContract_
     ) TokenTimelock(token_, beneficiary_, releaseTime_) {
+        require(beneficiary_ != address(0),"Beneficiary must not be the zero address");
+        require(masterContract_ != address(0),"Master must not be the zero address");
         masterContract = Master(masterContract_);
         btcb = btcb_;
         liqToken = liqToken_;
@@ -135,6 +137,10 @@ contract Master is Ownable {
         address _liqToken,
         address _payerWallet
     ) {
+        require(_amt != address(0),"Amt must not be the zero address");
+        require(_vault != address(0),"Vault must not be the zero address");
+        require(_liqToken != address(0),"LiqToken must not be the zero address");
+        require(_payerWallet != address(0),"PayerWallet must not be the zero address");
         amt = Amt(_amt);
         btcb = IERC20(addrBtcb);
         liqToken = LiquidityAmt(_liqToken);
@@ -159,6 +165,7 @@ contract Master is Ownable {
     /// @notice Sets a new payer wallet
     /// @dev Can only be called by the contract owner
     function setPayerWallet(address newPayerWallet) public onlyOwner {
+        require(newPayerWallet != address(0),"Payer wallet must not be the zero address");
         payerWallet = newPayerWallet;
 
         emit payerWalletSet(newPayerWallet);
@@ -484,6 +491,7 @@ contract Master is Ownable {
     /// @param account The address to receive the minted AMT.
     /// @param amount The amount of AMT to be minted.
     function mintMaster(address account, uint256 amount) public onlyOwner {
+        require(account != address(0),"Can not mint to zero address");
         amt.mint(account, amount);
         emit masterHasMinted(account, amount);
     }
