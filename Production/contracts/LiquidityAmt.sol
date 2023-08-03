@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /// @title Liquidity Auto Mining Token (liqAMT)
 /// @notice This contract creates a snapshotable and ownable ERC20 token for liquidity purposes.
 contract LiquidityAmt is ERC20Snapshot, Ownable {
-    string private constant  nameForDeploy = "liqAutoMiningToken";
-    string private constant  symbolForDeploy = "liqAMT";
+    string private constant nameForDeploy = "liqAutoMiningToken";
+    string private constant symbolForDeploy = "liqAMT";
 
     /// @notice Constructor sets the name and symbol of the token
     constructor() ERC20(nameForDeploy, symbolForDeploy) {}

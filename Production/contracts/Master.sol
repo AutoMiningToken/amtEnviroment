@@ -25,9 +25,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
  * The contract also interacts with IERC20 tokens and other contracts like Uniswap's Router and Factory contracts.
  */
 contract liqLocker is TokenTimelock {
-    Master masterContract;
-    IERC20 btcb;
-    IERC20 liqToken;
+    Master private masterContract;
+    IERC20 private btcb;
+    IERC20 private liqToken;
 
     constructor(
         IERC20 token_,
@@ -37,8 +37,14 @@ contract liqLocker is TokenTimelock {
         uint256 releaseTime_,
         address masterContract_
     ) TokenTimelock(token_, beneficiary_, releaseTime_) {
-        require(beneficiary_ != address(0),"Beneficiary must not be the zero address");
-        require(masterContract_ != address(0),"Master must not be the zero address");
+        require(
+            beneficiary_ != address(0),
+            "Beneficiary must not be the zero address"
+        );
+        require(
+            masterContract_ != address(0),
+            "Master must not be the zero address"
+        );
         masterContract = Master(masterContract_);
         btcb = btcb_;
         liqToken = liqToken_;
@@ -46,7 +52,10 @@ contract liqLocker is TokenTimelock {
 
     function charge(uint256 snapId) public {
         masterContract.liqCharge(snapId);
-        bool transferSucceded = btcb.transfer(beneficiary(), btcb.balanceOf(address(this)));
+        bool transferSucceded = btcb.transfer(
+            beneficiary(),
+            btcb.balanceOf(address(this))
+        );
         require(transferSucceded, "Transfer fail");
     }
 
@@ -59,7 +68,10 @@ contract liqLocker is TokenTimelock {
         uint256 amount = token().balanceOf(address(this));
         require(amount > 0, "TokenTimelock: no tokens to release");
 
-        bool transferSucceded = token().transfer(address(masterContract), amount);
+        bool transferSucceded = token().transfer(
+            address(masterContract),
+            amount
+        );
         require(transferSucceded, "Transfer fail");
         transferSucceded = liqToken.transfer(beneficiary(), amount);
         require(transferSucceded, "Transfer fail");
@@ -74,28 +86,30 @@ contract Master is Ownable {
     address public addrLiqLocker;
 
     /// @notice Flag indicating if liquidity is locked
-    bool liqLocked;
+    bool public liqLocked;
 
     /// @notice Instance of the AMT token
-    Amt amt;
+    Amt private amt;
 
     /// @notice Instance of the BTCB token
-    IERC20 btcb;
+    IERC20 private btcb;
 
     /// @notice Instance of the liquidity token
-    LiquidityAmt liqToken;
+    LiquidityAmt private liqToken;
 
     /// @notice Instance of the external liquidity token
-    IERC20 externalLiqToken;
+    IERC20 private externalLiqToken;
 
     /// @notice The address of the Uniswap router
-    address constant addrRouter = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
+    address public constant addrRouter =
+        0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
     /// @notice Instance of the Uniswap router
-    IUniswapV2Router02 constant liqRouter = IUniswapV2Router02(addrRouter);
+    IUniswapV2Router02 private constant liqRouter =
+        IUniswapV2Router02(addrRouter);
 
     /// @notice Instance of the Uniswap factory
-    IUniswapV2Factory liqFactory;
+    IUniswapV2Factory private liqFactory;
 
     /// @notice The address of the vault
     address public vault;
@@ -110,7 +124,8 @@ contract Master is Ownable {
     address public payerWallet;
 
     /// @notice Constant address of the BTCB token
-    address constant addrBtcb = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
+    address public constant addrBtcb =
+        0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
 
     /// @notice Mapping of snapshot IDs to corresponding amounts paid on that snapshot
     mapping(uint256 => uint256) public pays;
@@ -122,7 +137,7 @@ contract Master is Ownable {
     mapping(address => mapping(uint256 => bool)) public liqAlreadyCharged;
 
     /// @notice Amount to approve for transactions
-    uint256 amountForApproval = 99999999999999999999 * (10 ** 18);
+    uint256 public amountForApproval = 99999999999999999999 * (10 ** 18);
 
     event payerWalletSet(address newPayerWallet);
     event rentPaid(uint256 amount, uint256 vaultPart);
@@ -140,10 +155,16 @@ contract Master is Ownable {
         address _liqToken,
         address _payerWallet
     ) {
-        require(_amt != address(0),"Amt must not be the zero address");
-        require(_vault != address(0),"Vault must not be the zero address");
-        require(_liqToken != address(0),"LiqToken must not be the zero address");
-        require(_payerWallet != address(0),"PayerWallet must not be the zero address");
+        require(_amt != address(0), "Amt must not be the zero address");
+        require(_vault != address(0), "Vault must not be the zero address");
+        require(
+            _liqToken != address(0),
+            "LiqToken must not be the zero address"
+        );
+        require(
+            _payerWallet != address(0),
+            "PayerWallet must not be the zero address"
+        );
         amt = Amt(_amt);
         btcb = IERC20(addrBtcb);
         liqToken = LiquidityAmt(_liqToken);
@@ -168,13 +189,16 @@ contract Master is Ownable {
     /// @notice Sets a new payer wallet
     /// @dev Can only be called by the contract owner
     function setPayerWallet(address newPayerWallet) public onlyOwner {
-        require(newPayerWallet != address(0),"Payer wallet must not be the zero address");
+        require(
+            newPayerWallet != address(0),
+            "Payer wallet must not be the zero address"
+        );
         payerWallet = newPayerWallet;
 
         emit payerWalletSet(newPayerWallet);
     }
 
-    /// @notice Pay the rent to token holders and liquidity providers and sends to vault the corresponding participation 
+    /// @notice Pay the rent to token holders and liquidity providers and sends to vault the corresponding participation
     function payRent(uint256 amountBtcb, uint256 vaultParticipation) public {
         require(
             btcb.balanceOf(msg.sender) >= amountBtcb,
@@ -267,7 +291,6 @@ contract Master is Ownable {
 
         return toPay;
     }
-
 
     /// @notice Allows a liquidity provider to claim their payment for a given snapshot.
     /// @param snapId The id of the snapshot to claim the payment from.
@@ -410,7 +433,6 @@ contract Master is Ownable {
     /// @param amountAmt The amount of AMT to be added.
     /// @param amountBtcb The amount of BTCB to be added.
     function addLiquidity(uint256 amountAmt, uint256 amountBtcb) public {
-
         //Check requirements
         require(amt.balanceOf(msg.sender) >= amountAmt, "Not enough AMT");
         require(btcb.balanceOf(msg.sender) >= amountBtcb, "Not enough BBTC");
@@ -492,7 +514,7 @@ contract Master is Ownable {
     /// @param account The address to receive the minted AMT.
     /// @param amount The amount of AMT to be minted.
     function mintMaster(address account, uint256 amount) public onlyOwner {
-        require(account != address(0),"Can not mint to zero address");
+        require(account != address(0), "Can not mint to zero address");
         amt.mint(account, amount);
         emit masterHasMinted(account, amount);
     }

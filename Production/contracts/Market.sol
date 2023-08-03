@@ -10,19 +10,21 @@ import "./Master.sol";
 /// @title Market
 /// @notice This contract allows for the buying and selling of AMT tokens with USDT
 contract Market is Context, Ownable {
-    Amt public immutable  amt;
-    IERC20 public immutable  btcb;
-    IERC20 public immutable  usdt;
-    Master public immutable  master;
+    Amt private immutable amt;
+    IERC20 private immutable btcb;
+    IERC20 private immutable usdt;
+    Master private immutable master;
 
     address private immutable adminWallet;
 
-    address public constant addrBtcb = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
-    address public constant addrUsdt = 0x55d398326f99059fF775485246999027B3197955;
+    address public constant addrBtcb =
+        0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
+    address public constant addrUsdt =
+        0x55d398326f99059fF775485246999027B3197955;
 
     /// The current price of 100 AMT tokens in USD
     uint256 public usdPer100Amt;
-     
+
     /// @notice The fee for transactions. The fee is represented in perthousand (1/1000), not in percent (1/100)
     uint256 public fee;
 
@@ -53,7 +55,6 @@ contract Market is Context, Ownable {
         fee = _fee;
         adminWallet = _adminWallet;
     }
-
 
     /// @notice Allows a user to buy AMT tokens with USDT
     /// @param amountUsdt The amount of USDT to spend
@@ -130,7 +131,7 @@ contract Market is Context, Ownable {
 
         emit charged(snapId, amount);
     }
-    
+
     /// @notice Allows the contract owner to withdraw all tokens from the contract
     function withdrawAll() public onlyOwner {
         uint256 balanceAmt = amt.balanceOf(address(this));
