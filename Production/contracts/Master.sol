@@ -9,7 +9,7 @@ import "./IUniswapV2Factory.sol";
 import "./Amt.sol";
 import "./LiquidityAmt.sol";
 
-//Standar imports
+//Standard imports
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 //Timelock import
@@ -103,6 +103,9 @@ contract Master is Ownable {
     /// @notice The address of the liquidity pool
     address public liqPool;
 
+    /// @notice The amount of milisecs to use as a deadline in addLiquidity and removeLiquidity of router
+    uint256 constant milisecsToValidate = 60;
+
     /// @notice The address of the wallet that makes payments
     address public payerWallet;
 
@@ -181,7 +184,7 @@ contract Master is Ownable {
             vaultParticipation <= 100,
             "vaultParticipation cannot be higher than 100"
         );
-        require(amountBtcb > 100, "amount to small");
+        require(amountBtcb > 100, "amount too small");
         require(
             msg.sender == payerWallet,
             "Only PayerWallet can make the payments"
@@ -438,7 +441,7 @@ contract Master is Ownable {
                 (amountAmt * (98)) / 100,
                 (amountBtcb * (98)) / 100,
                 address(this),
-                block.timestamp + 60
+                block.timestamp + milisecsToValidate
             );
         liqToken.mint(msg.sender, amountLiquidityCreated);
         bool amtTransfer2 = amt.transfer(
@@ -462,8 +465,6 @@ contract Master is Ownable {
     /// @param amount The amount of liquidity to be removed.
     function removeLiquidity(uint256 amount) public {
         require(liqToken.balanceOf(msg.sender) >= amount, "Not enough liqAMT");
-
-        uint256 constant milisecsToValidate = 60;
         uint256 amountAmtFromLiq;
         uint256 amountBtcbFromLiq;
 
