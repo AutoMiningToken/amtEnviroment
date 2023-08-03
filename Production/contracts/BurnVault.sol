@@ -24,6 +24,7 @@ contract BurnVault is Ownable {
     /// @notice Withdraws backing BTCb tokens by burning AMT tokens
     /// @param amount The amount of AMT tokens to burn
     function backingWithdraw(uint256 amount) public {
+        require(btcb.balanceOf(address(this)) > 0, "Nothing to withdraw");
         uint256 totalSupply = amt.totalSupply();
         uint256 btcbToTransfer = (amount * btcb.balanceOf(address(this))) /
             totalSupply;
