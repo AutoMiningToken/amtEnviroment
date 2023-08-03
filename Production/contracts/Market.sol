@@ -8,7 +8,7 @@ import "./Amt.sol";
 import "./Master.sol";
 
 /// @title Market
-/// @notice This contract allows for the buying and selling of AMT tokens with USDT and BTCb
+/// @notice This contract allows for the buying and selling of AMT tokens with USDT
 contract Market is Context, Ownable {
     Amt immutable amt;
     IERC20 immutable btcb;
