@@ -10,9 +10,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Amt is ERC20Snapshot, Ownable {
 
     /// The name of the token to be created upon deployment
-    string constant nameForDeploy = "AutoMiningToken";
+    string private constant  nameForDeploy = "AutoMiningToken";
     /// The symbol of the token to be created upon deployment
-    string constant symbolForDeploy = "AMT";
+    string  private constant symbolForDeploy = "AMT";
 
     /// The maximum number of AMT that can ever exist
     uint256 constant maxAmt = 100000000 * (10 ** 18);

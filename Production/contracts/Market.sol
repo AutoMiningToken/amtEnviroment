@@ -10,20 +10,21 @@ import "./Master.sol";
 /// @title Market
 /// @notice This contract allows for the buying and selling of AMT tokens with USDT
 contract Market is Context, Ownable {
-    Amt immutable amt;
-    IERC20 immutable btcb;
-    IERC20 immutable usdt;
-    Master immutable master;
+    Amt public immutable  amt;
+    IERC20 public immutable  btcb;
+    IERC20 public immutable  usdt;
+    Master public immutable  master;
 
     address private immutable adminWallet;
 
-    address constant addrBtcb = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
-    address constant addrUsdt = 0x55d398326f99059fF775485246999027B3197955;
+    address public constant addrBtcb = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
+    address public constant addrUsdt = 0x55d398326f99059fF775485246999027B3197955;
 
     /// The current price of 100 AMT tokens in USD
     uint256 public usdPer100Amt;
-    /// The fee for transactions
-    uint256 immutable fee;
+     
+    /// @notice The fee for transactions. The fee is represented in perthousand (1/1000), not in percent (1/100)
+    uint256 public fee;
 
     bool masterSetControl = false;
 
@@ -110,6 +111,13 @@ contract Market is Context, Ownable {
     function setRate(uint256 _usdPer100Amt) public onlyOwner {
         require(_usdPer100Amt > 0, "Rate must be greater than 0");
         usdPer100Amt = _usdPer100Amt;
+    }
+
+    /// @notice Allows the contract owner to set the fee for the sell of AMT tokens
+    /// @param _fee The new fee to use
+    function setFee(uint256 _fee) public onlyOwner {
+        require(_fee < 1000, "Fee must be lesser than 1000");
+        fee = _fee;
     }
 
     /// @notice Allows the contract owner to charge a snapshot from the Master contract
