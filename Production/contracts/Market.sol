@@ -28,8 +28,6 @@ contract Market is Context, Ownable {
     /// @notice The fee for transactions. The fee is represented in perthousand (1/1000), not in percent (1/100)
     uint256 public fee;
 
-    bool masterSetControl = false;
-
     event amtBought(uint256 usdtFromUser, uint256 amtToUser);
     event userSold(uint256 amountUsdt, uint256 amtFromUser);
     event charged(uint256 snapId, uint256 amount);
