@@ -44,7 +44,8 @@ contract liqLocker is TokenTimelock {
 
     function charge(uint256 snapId) public {
         masterContract.liqCharge(snapId);
-        btcb.transfer(beneficiary(), btcb.balanceOf(address(this)));
+        bool transferSucceded = btcb.transfer(beneficiary(), btcb.balanceOf(address(this)));
+        require(transferSucceded, "Transfer fail");
     }
 
     function release() public virtual override {
@@ -56,8 +57,10 @@ contract liqLocker is TokenTimelock {
         uint256 amount = token().balanceOf(address(this));
         require(amount > 0, "TokenTimelock: no tokens to release");
 
-        token().transfer(address(masterContract), amount);
-        liqToken.transfer(beneficiary(), amount);
+        bool transferSucceded = token().transfer(address(masterContract), amount);
+        require(transferSucceded, "Transfer fail");
+        transferSucceded = liqToken.transfer(beneficiary(), amount);
+        require(transferSucceded, "Transfer fail");
     }
 }
 
