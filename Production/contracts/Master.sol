@@ -89,10 +89,10 @@ contract Master is Ownable {
     IERC20 externalLiqToken;
 
     /// @notice The address of the Uniswap router
-    address addrRouter = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
+    address constant addrRouter = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
     /// @notice Instance of the Uniswap router
-    IUniswapV2Router02 liqRouter = IUniswapV2Router02(addrRouter);
+    IUniswapV2Router02 constant liqRouter = IUniswapV2Router02(addrRouter);
 
     /// @notice Instance of the Uniswap factory
     IUniswapV2Factory liqFactory;
@@ -463,7 +463,7 @@ contract Master is Ownable {
     function removeLiquidity(uint256 amount) public {
         require(liqToken.balanceOf(msg.sender) >= amount, "Not enough liqAMT");
 
-        uint256 milisecsToValidate = 60;
+        uint256 constant milisecsToValidate = 60;
         uint256 amountAmtFromLiq;
         uint256 amountBtcbFromLiq;
 
