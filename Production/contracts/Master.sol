@@ -74,7 +74,7 @@ contract Master is Ownable {
     address public addrLiqLocker;
 
     /// @notice Flag indicating if liquidity is locked
-    bool liqLocked = false;
+    bool liqLocked;
 
     /// @notice Instance of the AMT token
     Amt amt;
