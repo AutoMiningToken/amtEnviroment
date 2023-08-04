@@ -139,6 +139,16 @@ contract Master is Ownable {
     /// @notice Amount to approve for transactions
     uint256 public amountForApproval = 99999999999999999999 * (10 ** 18);
 
+    /// @notice Mapping of amount of btcb charged in a snapshot
+    mapping(uint256 => uint256) public chargedAt;
+    /// @notice Mapping of the amount of amt used to charge in a snapshot
+    mapping(uint256 => uint256) public amtUsedAt;
+
+    /// @notice Mapping of amount of btcb charged in a snapshot
+    mapping(uint256 => uint256) public LiqChargedAt;
+    /// @notice Mapping of the amount of amt used to charge in a snapshot
+    mapping(uint256 => uint256) public LiqAmtUsedAt;
+
     event payerWalletSet(address newPayerWallet);
     event rentPaid(uint256 amount, uint256 vaultPart);
     event approveExtended(uint256 amountApproved);
@@ -147,6 +157,7 @@ contract Master is Ownable {
     event liqRemoved(uint256 amountAmt, uint256 amountBtcb, address from);
     event masterHasMinted(address addr, uint256 amount);
     event charged(uint snapId, address user, uint256 amount);
+    event dustCollected(uint snapId, uint256 dustCollected);
 
     /// @notice Contract constructor, initializes instances, create the pair for the liquidity pool, and sets initial addresses
     constructor(
@@ -250,6 +261,9 @@ contract Master is Ownable {
 
         uint256 toPay = (pays[snapId] * amt.balanceOfAt(msg.sender, snapId)) /
             (amt.totalSupplyAt(snapId) - amt.balanceOfAt(liqPool, snapId));
+
+        chargedAt[snapId] += toPay;
+        amtUsedAt[snapId] += amt.balanceOfAt(msg.sender, snapId);
         bool btcbTransfer = btcb.transfer(msg.sender, toPay);
 
         require(btcbTransfer, "Transfer fail");
@@ -278,7 +292,8 @@ contract Master is Ownable {
                     (amt.totalSupplyAt(i) - amt.balanceOfAt(liqPool, i));
                 toPay += paidAti;
                 alreadyCharged[msg.sender][i] = true;
-
+                chargedAt[i] = paidAti;
+                amtUsedAt[i] = amt.balanceOfAt(msg.sender, i);
                 emit charged(i, msg.sender, paidAti);
             }
         }
@@ -290,6 +305,22 @@ contract Master is Ownable {
         require(btcbTransfer, "Transfer fail");
 
         return toPay;
+    }
+
+    /// @notice handles the dust generated on a given snapshot at the moment of execution
+    /// @param snapId the Id of the snapshot to handle the dust
+    /// @dev Can only be called by the contract owner
+    /// @return dust collected from given snapshot
+    function handleDust(uint256 snapId) public onlyOwner returns (uint256) {
+        uint256 dust = ((pays[snapId] * amtUsedAt[snapId]) /
+            (amt.totalSupplyAt(snapId) - amt.balanceOfAt(liqPool, snapId))) -
+            chargedAt[snapId];
+        chargedAt[snapId] += dust;
+        require(dust > 0, "Nothing to collect from dust");
+        bool transferSucceded = btcb.transfer(msg.sender, dust);
+        require(transferSucceded, "Transfer fail");
+        emit dustCollected(snapId, dust);
+        return dust;
     }
 
     /// @notice Allows a liquidity provider to claim their payment for a given snapshot.
@@ -304,11 +335,12 @@ contract Master is Ownable {
             "Nothing to charge"
         );
         liqAlreadyCharged[msg.sender][snapId] = true;
-        bool btcbTransfer = btcb.transfer(
-            msg.sender,
-            (liqPays[snapId] * liqToken.balanceOfAt(msg.sender, snapId)) /
-                liqToken.totalSupplyAt(snapId)
-        );
+        uint256 liqToPay = (liqPays[snapId] *
+            liqToken.balanceOfAt(msg.sender, snapId)) /
+            liqToken.totalSupplyAt(snapId);
+        LiqChargedAt[snapId] += liqToPay;
+        LiqAmtUsedAt[snapId] += liqToken.balanceOfAt(msg.sender, snapId);
+        bool btcbTransfer = btcb.transfer(msg.sender, liqToPay);
 
         require(btcbTransfer, "Transfer failed");
     }
@@ -337,7 +369,8 @@ contract Master is Ownable {
                     liqToken.balanceOfAt(msg.sender, i)) /
                     (liqToken.totalSupplyAt(i));
                 toPay += paidAti;
-
+                LiqChargedAt[i] += paidAti;
+                LiqAmtUsedAt[i] += liqToken.balanceOfAt(msg.sender, i);
                 emit charged(i, msg.sender, paidAti);
             }
         }
@@ -349,6 +382,21 @@ contract Master is Ownable {
         require(btcbTransfer, "Transfer fail");
 
         return toPay;
+    }
+
+    /// @notice handles the dust generated on a given snapshot for liquidity providers at the moment of execution
+    /// @param snapId the Id of the snapshot to handle the dust
+    /// @dev Can only be called by the contract owner
+    /// @return dust collected from given snapshot
+    function LiqHandleDust(uint256 snapId) public onlyOwner returns (uint256) {
+        uint256 dust = ((liqPays[snapId] * LiqAmtUsedAt[snapId]) /
+            liqToken.totalSupplyAt(snapId)) - LiqChargedAt[snapId];
+        LiqChargedAt[snapId] += dust;
+        require(dust > 0, "Nothing to collect from dust");
+        bool transferSucceded = btcb.transfer(msg.sender, dust);
+        require(transferSucceded, "Transfer fail");
+        emit dustCollected(snapId, dust);
+        return dust;
     }
 
     /// @notice Adds liquidity to the contract and locks it for two years, can only be called by the contract owner.
