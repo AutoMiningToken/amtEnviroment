@@ -45,6 +45,8 @@ contract Market is Context, Ownable {
         uint256 _fee,
         address _adminWallet
     ) {
+        require(_addrMaster != address(0), "Can not set master to zero address");
+        require(_addrAMT != address(0), "Can not set amt to zero address");
         amt = Amt(_addrAMT);
         master = Master(_addrMaster);
         btcb = IERC20(addrBtcb);
