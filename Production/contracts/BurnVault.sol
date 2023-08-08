@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Amt.sol";
 
 /// @title BurnVault
 /// @notice This contract burns AMT tokens and withdraws backing BTCb tokens
 contract BurnVault is Ownable {
+    using SafeERC20 for IERC20;
     /// The address of the BTCb token
     address constant addrBtcb = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
-
+    
     IERC20 constant btcb = IERC20(addrBtcb);
     Amt immutable amt;
 
@@ -30,8 +32,7 @@ contract BurnVault is Ownable {
 
         amt.burnFrom(msg.sender, amount);
 
-        bool btcbTransferSuccess = btcb.transfer(msg.sender, btcbToTransfer);
-        require(btcbTransferSuccess, "Transaction failed");
+        btcb.transfer(msg.sender, btcbToTransfer);
 
         emit burnMade(amount, btcbToTransfer);
     }

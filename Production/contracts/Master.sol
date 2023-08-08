@@ -11,6 +11,7 @@ import "./LiquidityAmt.sol";
 
 //Standard imports
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 //Timelock import
 import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
@@ -25,6 +26,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
  * The contract also interacts with IERC20 tokens and other contracts like Uniswap's Router and Factory contracts.
  */
 contract liqLocker is TokenTimelock {
+    using SafeERC20 for IERC20;
     Master private masterContract;
     IERC20 private btcb;
     IERC20 private liqToken;
@@ -82,6 +84,7 @@ contract liqLocker is TokenTimelock {
 /// @notice This contract manages payments, liquidity, and token interactions.
 /// @dev Extends the Ownable contract, providing a mechanism to prevent unauthorized access to certain methods.
 contract Master is Ownable {
+    using SafeERC20 for IERC20;
     /// @notice The address of the liquidity locker
     address public addrLiqLocker;
 
@@ -232,14 +235,12 @@ contract Master is Ownable {
 
         uint256 toHolders = amountBtcb - toVault - toLiqProviders;
 
-        bool btcbTransfer1 = btcb.transferFrom(
+        btcb.transferFrom(
             msg.sender,
             address(this),
             amountBtcb - toVault
         );
-        bool btcbTransfer2 = btcb.transferFrom(msg.sender, vault, toVault);
-
-        require(btcbTransfer1 && btcbTransfer2, "Transfer failed");
+        btcb.transferFrom(msg.sender, vault, toVault);
 
         uint256 snap = amt.snapshot();
         uint256 liqSnap = liqToken.snapshot();
@@ -264,9 +265,7 @@ contract Master is Ownable {
 
         chargedAt[snapId] += toPay;
         amtUsedAt[snapId] += amt.balanceOfAt(msg.sender, snapId);
-        bool btcbTransfer = btcb.transfer(msg.sender, toPay);
-
-        require(btcbTransfer, "Transfer fail");
+        btcb.transfer(msg.sender, toPay);
 
         emit charged(snapId, msg.sender, toPay);
 
@@ -300,9 +299,7 @@ contract Master is Ownable {
 
         require(toPay > 0, "There was nothing to transfer");
 
-        bool btcbTransfer = btcb.transfer(msg.sender, toPay);
-
-        require(btcbTransfer, "Transfer fail");
+        btcb.transfer(msg.sender, toPay);
 
         return toPay;
     }
@@ -317,8 +314,7 @@ contract Master is Ownable {
             chargedAt[snapId];
         chargedAt[snapId] += dust;
         require(dust > 0, "Nothing to collect from dust");
-        bool transferSucceded = btcb.transfer(msg.sender, dust);
-        require(transferSucceded, "Transfer fail");
+        btcb.transfer(msg.sender, dust);
         emit dustCollected(snapId, dust);
         return dust;
     }
@@ -340,9 +336,7 @@ contract Master is Ownable {
             liqToken.totalSupplyAt(snapId);
         LiqChargedAt[snapId] += liqToPay;
         LiqAmtUsedAt[snapId] += liqToken.balanceOfAt(msg.sender, snapId);
-        bool btcbTransfer = btcb.transfer(msg.sender, liqToPay);
-
-        require(btcbTransfer, "Transfer failed");
+        btcb.transfer(msg.sender, liqToPay);
     }
 
     /// @notice Allows a liquidity provider to claim their payments over a range of snapshots.
@@ -376,11 +370,7 @@ contract Master is Ownable {
         }
 
         require(toPay > 0, "There was nothing to transfer");
-
-        bool btcbTransfer = btcb.transfer(msg.sender, toPay);
-
-        require(btcbTransfer, "Transfer fail");
-
+        btcb.transfer(msg.sender, toPay);
         return toPay;
     }
 
@@ -393,8 +383,7 @@ contract Master is Ownable {
             liqToken.totalSupplyAt(snapId)) - LiqChargedAt[snapId];
         LiqChargedAt[snapId] += dust;
         require(dust > 0, "Nothing to collect from dust");
-        bool transferSucceded = btcb.transfer(msg.sender, dust);
-        require(transferSucceded, "Transfer fail");
+        btcb.transfer(msg.sender, dust);
         emit dustCollected(snapId, dust);
         return dust;
     }
@@ -417,12 +406,12 @@ contract Master is Ownable {
 
         liqLocked = true;
 
-        bool amtTransfer1 = amt.transferFrom(
+        amt.transferFrom(
             msg.sender,
             address(this),
             amountAmt
         );
-        bool btcbTransfer1 = btcb.transferFrom(
+        btcb.transferFrom(
             msg.sender,
             address(this),
             amountBtcb
@@ -459,21 +448,15 @@ contract Master is Ownable {
             amountLiquidityCreated
         );
         liqToken.mint(address(contractLiqLocker), amountLiquidityCreated);
-        bool amtTransfer2 = amt.transfer(
+        amt.transfer(
             msg.sender,
             amountAmt - amountAmtToLiq
         );
-        bool btcbTransfer2 = btcb.transfer(
+        btcb.transfer(
             msg.sender,
             amountBtcb - amountBtcbToLiq
         );
         addrLiqLocker = address(contractLiqLocker);
-
-        require(
-            amtTransfer1 && amtTransfer2 && btcbTransfer1 && btcbTransfer2,
-            "Transfer failed"
-        );
-
         emit liqLockingAdded(amountAmtToLiq, amountBtcbToLiq, msg.sender);
     }
 
@@ -487,12 +470,12 @@ contract Master is Ownable {
         require(amountAmt > 1, "AMT amount is too small");
         require(amountBtcb > 1, "BTCB amount is too small");
 
-        bool amtTransfer1 = amt.transferFrom(
+        amt.transferFrom(
             msg.sender,
             address(this),
             amountAmt
         );
-        bool btcbTransfer1 = btcb.transferFrom(
+        btcb.transferFrom(
             msg.sender,
             address(this),
             amountBtcb
@@ -514,19 +497,15 @@ contract Master is Ownable {
                 block.timestamp + milisecsToValidate
             );
         liqToken.mint(msg.sender, amountLiquidityCreated);
-        bool amtTransfer2 = amt.transfer(
+        amt.transfer(
             msg.sender,
             amountAmt - amountAmtToLiq
         );
-        bool btcbTransfer2 = btcb.transfer(
+        btcb.transfer(
             msg.sender,
             amountBtcb - amountBtcbToLiq
         );
 
-        require(
-            amtTransfer1 && amtTransfer2 && btcbTransfer1 && btcbTransfer2,
-            "Transfer failed"
-        );
 
         emit liqAdded(amountAmtToLiq, amountBtcbToLiq, msg.sender);
     }
@@ -550,10 +529,8 @@ contract Master is Ownable {
             block.timestamp + milisecsToValidate
         );
         liqToken.burnFrom(msg.sender, amount);
-        bool amtTransfer = amt.transfer(msg.sender, amountAmtFromLiq);
-        bool btcbTransfer = btcb.transfer(msg.sender, amountBtcbFromLiq);
-
-        require(amtTransfer && btcbTransfer, "Transfer failed");
+        amt.transfer(msg.sender, amountAmtFromLiq);
+        btcb.transfer(msg.sender, amountBtcbFromLiq);
 
         emit liqRemoved(amountAmtFromLiq, amountBtcbFromLiq, msg.sender);
     }

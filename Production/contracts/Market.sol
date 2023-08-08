@@ -3,6 +3,7 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Amt.sol";
 import "./Master.sol";
@@ -10,6 +11,7 @@ import "./Master.sol";
 /// @title Market
 /// @notice This contract allows for the buying and selling of AMT tokens with USDT
 contract Market is Context, Ownable {
+    using SafeERC20 for IERC20;
     Amt private immutable amt;
     IERC20 private immutable btcb;
     IERC20 private immutable usdt;
@@ -70,16 +72,12 @@ contract Market is Context, Ownable {
             amtToUser <= amt.balanceOf(address(this)),
             "Market doesn't have enough AMT"
         );
-
-        bool usdtTransfer = usdt.transferFrom(
+        usdt.transferFrom(
             msg.sender,
             adminWallet,
             amountUsdt
         );
-        bool amtTransfer = amt.transfer(msg.sender, amtToUser);
-
-        require(usdtTransfer && amtTransfer, "Transfer failed");
-
+        amt.transfer(msg.sender, amtToUser);
         emit amtBought(amountUsdt, amtToUser);
     }
 
@@ -99,10 +97,8 @@ contract Market is Context, Ownable {
             "Market doesn't have enough USDT"
         );
 
-        bool amtTransfer = amt.transferFrom(msg.sender, adminWallet, amountAmt);
-        bool usdtTransfer = usdt.transfer(msg.sender, usdtToTransfer);
-
-        require(amtTransfer && usdtTransfer, "Transfer failed");
+        amt.transferFrom(msg.sender, adminWallet, amountAmt);
+        usdt.transfer(msg.sender, usdtToTransfer);
 
         emit userSold(usdtToTransfer, amountAmt);
     }
@@ -125,9 +121,7 @@ contract Market is Context, Ownable {
     /// @param snapId The id of the snapshot to charge
     function charge(uint256 snapId) public onlyOwner {
         uint256 amount = master.charge(snapId);
-        bool btcbTransfer = btcb.transfer(msg.sender, amount);
-
-        require(btcbTransfer, "Transfer failed");
+        btcb.transfer(msg.sender, amount);
 
         emit charged(snapId, amount);
     }
@@ -137,9 +131,7 @@ contract Market is Context, Ownable {
         uint256 balanceAmt = amt.balanceOf(address(this));
         uint256 balanceUsdt = usdt.balanceOf(address(this));
 
-        bool amtTransfer = amt.transfer(adminWallet, balanceAmt);
-        bool usdtTransfer = usdt.transfer(adminWallet, balanceUsdt);
-
-        require(amtTransfer && usdtTransfer, "Transfer failed");
+        amt.transfer(adminWallet, balanceAmt);
+        usdt.transfer(adminWallet, balanceUsdt);
     }
 }
