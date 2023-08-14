@@ -8,6 +8,7 @@ import "./Amt.sol";
 /// @notice This contract burns AMT tokens and withdraws backing BTCb tokens
 contract BurnVault is Ownable {
     using SafeERC20 for IERC20;
+    using SafeERC20 for Amt;
     /// The address of the BTCb token
     address constant addrBtcb = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
     
@@ -25,8 +26,10 @@ contract BurnVault is Ownable {
     /// @notice Withdraws backing BTCb tokens by burning AMT tokens
     /// @param amount The amount of AMT tokens to burn
     function backingWithdraw(uint256 amount) public {
-        require(btcb.balanceOf(address(this)) > 0, "Nothing to withdraw");
         uint256 totalSupply = amt.totalSupply();
+        require(totalSupply > 0, "Unable to withdraw with 0 total supply of AMT tokens");
+        require(btcb.balanceOf(address(this)) > 0, "Nothing to withdraw");
+
         uint256 btcbToTransfer = (amount * btcb.balanceOf(address(this))) /
             totalSupply;
 

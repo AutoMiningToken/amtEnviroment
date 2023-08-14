@@ -54,11 +54,10 @@ contract liqLocker is TokenTimelock {
 
     function charge(uint256 snapId) public {
         masterContract.liqCharge(snapId);
-        bool transferSucceded = btcb.transfer(
+        btcb.transfer(
             beneficiary(),
             btcb.balanceOf(address(this))
         );
-        require(transferSucceded, "Transfer fail");
     }
 
     function release() public virtual override {
@@ -70,13 +69,11 @@ contract liqLocker is TokenTimelock {
         uint256 amount = token().balanceOf(address(this));
         require(amount > 0, "TokenTimelock: no tokens to release");
 
-        bool transferSucceded = token().transfer(
+        token().transfer(
             address(masterContract),
             amount
         );
-        require(transferSucceded, "Transfer fail");
-        transferSucceded = liqToken.transfer(beneficiary(), amount);
-        require(transferSucceded, "Transfer fail");
+        liqToken.transfer(beneficiary(), amount);
     }
 }
 
@@ -85,6 +82,8 @@ contract liqLocker is TokenTimelock {
 /// @dev Extends the Ownable contract, providing a mechanism to prevent unauthorized access to certain methods.
 contract Master is Ownable {
     using SafeERC20 for IERC20;
+    using SafeERC20 for Amt;
+    using SafeERC20 for LiquidityAmt;
     /// @notice The address of the liquidity locker
     address public addrLiqLocker;
 

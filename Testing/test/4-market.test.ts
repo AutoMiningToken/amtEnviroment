@@ -56,6 +56,17 @@ describe("Market", function () {
     );
   });
 
+  it("Owner must be able to change fee", async function(){
+    const [owner] = await ethers.getSigners();
+    await market.setFee(980);
+    expect(await market.fee()).to.equal(980);
+  })
+
+  it("Owner must not able to change fee to a value greater than 1000", async function(){
+    const [owner] = await ethers.getSigners();
+    expect(market.setFee(1001)).to.revertedWith("Fee must be lesser than 1000");
+  })
+
   it("User should be able to buy at defined rate", async function () {
     const [owner, user] = await ethers.getSigners();
 

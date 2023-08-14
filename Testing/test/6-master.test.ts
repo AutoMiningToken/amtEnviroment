@@ -8,6 +8,7 @@ import {
 } from "../typechain-types";
 import { Amt } from "../typechain-types";
 import { BurnVault } from "../typechain-types";
+import { LiqLocker } from "../typechain-types";
 const { expect } = chai;
 
 describe("Master", function () {
@@ -17,6 +18,7 @@ describe("Master", function () {
   let burnVault: BurnVault;
   let master: Master;
   let testLiqPoolAndRouter: TestLiqPoolAndRouter;
+  const zeroAddress = "0x0000000000000000000000000000000000000000";
 
   this.beforeEach(async function () {
     const [owner, payerWallet, addr2, addr3, addr4, addr5] =
@@ -77,6 +79,18 @@ describe("Master", function () {
     expect(await master.payerWallet()).to.be.equal(newPayerWallet.address);
   });
 
+  it("UNIT: Owner must be able to set payer wallet", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    await master.setPayerWallet(newPayerWallet.address);
+    expect(await master.payerWallet()).to.be.equal(newPayerWallet.address);
+  });
+
+  it("UNIT: Payer wallet must not be set as zero address", async function () {
+    await expect(master.setPayerWallet(zeroAddress)).to.revertedWith(
+      "Payer wallet must not be the zero address"
+    );
+  });
+
   it("UNIT: Payer wallet must be able to execute pay rent", async function () {
     const [owner, payerWallet, notPayerWallet] = await ethers.getSigners();
     await master.mintMaster(owner.address, 10000);
@@ -100,7 +114,12 @@ describe("Master", function () {
     await master.mintMaster(owner.address, 10000);
     await btcb.transfer(payerWallet.address, 1000);
     await expect(master.connect(payerWallet).payRent(100, 0)).to.revertedWith(
-      "amount to small"
+      "amount too small"
+    );
+  });
+  it("UNIT: Must not be able to mint to zero address", async function () {
+    await expect(master.mintMaster(zeroAddress, 10)).to.revertedWith(
+      "Can not mint to zero address"
     );
   });
 
@@ -986,6 +1005,364 @@ describe("Master", function () {
       btcb,
       [master.address, tokenHolder2.address],
       [-666, 666]
+    );
+  });
+
+  it("UNIT: Owner must be able to add liquidity locking", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+    )
+      .to.changeTokenBalance(amt, owner.address, -100)
+      .and.to.changeTokenBalance(btcb, owner.address, -10)
+      .and.to.changeTokenBalance(liqAmt, await master.addrLiqLocker(), 100);
+  });
+
+  it("UNIT: Owner must not be able to add liquidity locking twice", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+    )
+      .to.changeTokenBalance(amt, owner.address, -100)
+      .and.to.changeTokenBalance(btcb, owner.address, -10);
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+    ).to.revertedWith("Liquidity already locked");
+  });
+
+  it("UNIT: Owner must not be able to add liquidity without enough amt", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await amt.transfer(payerWallet.address, amt.balanceOf(owner.address));
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+    ).to.revertedWith("Not enough AMT");
+  });
+
+  it("UNIT: Owner must not be able to add liquidity without enough btcb", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await btcb.transfer(payerWallet.address, btcb.balanceOf(owner.address));
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+    ).to.revertedWith("Not enough BBTC");
+  });
+
+  it("UNIT: Owner must not be able to add liquidity with an amount of amt lesser than 2", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(1, 10, owner.address, 60, master.address)
+    ).to.revertedWith("AMT amount is too small");
+  });
+
+  it("UNIT: Owner must not be able to add liquidity with an amount of btcb lesser than 2", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 1, owner.address, 60, master.address)
+    ).to.revertedWith("BTCB amount is too small");
+  });
+
+  it("UNIT: Liq locker must not be seted with zero address as beneficiary", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 10, zeroAddress, 60, master.address)
+    ).to.revertedWith("Beneficiary must not be the zero address");
+  });
+
+  it("UNIT: Liq locker must not be seted with zero address as master", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 60, zeroAddress)
+    ).to.revertedWith("Master must not be the zero address");
+  });
+
+  it("UNIT: Owner must be able to charge from liquidity locked", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+    )
+      .to.changeTokenBalance(amt, owner.address, -100)
+      .and.to.changeTokenBalance(btcb, owner.address, -10);
+
+    const liqLockerAddress = await master.addrLiqLocker();
+    const LiqLocker = await ethers.getContractFactory("liqLocker");
+    var liqLocker = LiqLocker.attach(liqLockerAddress) as LiqLocker;
+    await btcb.transfer(payerWallet.address, 1000);
+    await expect(
+      master.connect(payerWallet).payRent(1000, 0)
+    ).to.changeTokenBalance(btcb, master.address, 1000);
+    await expect(liqLocker.charge(1)).to.changeTokenBalance(
+      btcb,
+      owner.address,
+      1000
+    );
+  });
+
+  function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  it("UNIT: Owner must be able to release tokens after timelapse", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
+    )
+      .to.changeTokenBalance(amt, owner.address, -100)
+      .and.to.changeTokenBalance(btcb, owner.address, -10);
+    const liqLockerAddress = await master.addrLiqLocker();
+    const LiqLocker = await ethers.getContractFactory("liqLocker");
+    var liqLocker = LiqLocker.attach(liqLockerAddress) as LiqLocker;
+    await sleep(6500);
+    await expect(liqLocker.release()).to.changeTokenBalance(
+      liqAmt,
+      owner.address,
+      100
+    );
+  });
+
+  it("UNIT: Owner must not be able to release tokens before timelapse", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
+    )
+      .to.changeTokenBalance(amt, owner.address, -100)
+      .and.to.changeTokenBalance(btcb, owner.address, -10);
+    const liqLockerAddress = await master.addrLiqLocker();
+    const LiqLocker = await ethers.getContractFactory("liqLocker");
+    var liqLocker = LiqLocker.attach(liqLockerAddress) as LiqLocker;
+    await sleep(500);
+    await expect(liqLocker.release()).to.revertedWith(
+      "TokenTimelock: current time is before release time"
+    );
+  });
+
+  it("UNIT: Owner must not be able to release tokens before timelapse if there are no tokens to release", async function () {
+    const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
+    amt.approve(master.address, 1000);
+    btcb.approve(master.address, 1000);
+    await master.mintMaster(owner.address, 100);
+    await expect(
+      master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
+    )
+      .to.changeTokenBalance(amt, owner.address, -100)
+      .and.to.changeTokenBalance(btcb, owner.address, -10);
+    const liqLockerAddress = await master.addrLiqLocker();
+    const LiqLocker = await ethers.getContractFactory("liqLocker");
+    var liqLocker = LiqLocker.attach(liqLockerAddress) as LiqLocker;
+    await sleep(6500);
+    await expect(liqLocker.release()).to.changeTokenBalance(
+      liqAmt,
+      owner.address,
+      100
+    );
+    await expect(liqLocker.release()).to.revertedWith(
+      "TokenTimelock: no tokens to release"
+    );
+  });
+
+  it("UNIT: Owner must be able to handle dust after payments charged", async function () {
+    const [owner, payerWallet, tokenHolder1, tokenHolder2, tokenHolder3] =
+      await ethers.getSigners();
+    await master.mintMaster(tokenHolder1.address, 10000);
+    await master.mintMaster(tokenHolder2.address, 10000);
+    await master.mintMaster(tokenHolder3.address, 10000);
+    await btcb.transfer(payerWallet.address, 1000);
+    await expect(
+      master.connect(payerWallet).payRent(1000, 0)
+    ).to.changeTokenBalance(btcb, master.address, 1000);
+    await expect(master.connect(tokenHolder1).charge(1)).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder1.address],
+      [-333, 333]
+    );
+    await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder2.address],
+      [-333, 333]
+    );
+
+    await expect(master.connect(tokenHolder3).charge(1)).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder3.address],
+      [-333, 333]
+    );
+
+    await expect(master.handleDust(1)).to.changeTokenBalances(
+      btcb,
+      [master.address, owner.address],
+      [-1, 1]
+    );
+  });
+
+  it("UNIT: Owner must not be able to handle dust after payments charged if there is no dust generated", async function () {
+    const [owner, payerWallet, tokenHolder1, tokenHolder2, tokenHolder3] =
+      await ethers.getSigners();
+    await master.mintMaster(tokenHolder1.address, 10000);
+    await master.mintMaster(tokenHolder2.address, 10000);
+    await master.mintMaster(tokenHolder3.address, 10000);
+    await btcb.transfer(payerWallet.address, 1000);
+    await expect(
+      master.connect(payerWallet).payRent(999, 0)
+    ).to.changeTokenBalance(btcb, master.address, 999);
+    await expect(master.connect(tokenHolder1).charge(1)).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder1.address],
+      [-333, 333]
+    );
+    await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder2.address],
+      [-333, 333]
+    );
+
+    await expect(master.connect(tokenHolder3).charge(1)).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder3.address],
+      [-333, 333]
+    );
+
+    await expect(master.handleDust(1)).to.revertedWith(
+      "Nothing to collect from dust"
+    );
+  });
+
+  it("UNIT: Owner must be able to handle dust for liquidity payments after payments charged", async function () {
+    const [owner, payerWallet, tokenHolder1, tokenHolder2, tokenHolder3] =
+      await ethers.getSigners();
+    await master.mintMaster(tokenHolder1.address, 10000);
+    await master.mintMaster(tokenHolder2.address, 10000);
+    await master.mintMaster(tokenHolder3.address, 10000);
+    await btcb.transfer(payerWallet.address, 1000);
+    await btcb.transfer(tokenHolder1.address, 100);
+    await btcb.transfer(tokenHolder2.address, 100);
+    await btcb.transfer(tokenHolder3.address, 100);
+
+    amt.connect(tokenHolder1).approve(master.address, 10000);
+    btcb.connect(tokenHolder1).approve(master.address, 100);
+
+    amt.connect(tokenHolder2).approve(master.address, 10000);
+    btcb.connect(tokenHolder2).approve(master.address, 100);
+
+    amt.connect(tokenHolder3).approve(master.address, 10000);
+    btcb.connect(tokenHolder3).approve(master.address, 100);
+
+    master.connect(tokenHolder1).addLiquidity(10000, 100);
+    master.connect(tokenHolder2).addLiquidity(10000, 100);
+    master.connect(tokenHolder3).addLiquidity(10000, 100);
+    await expect(
+      master.connect(payerWallet).payRent(1000, 0)
+    ).to.changeTokenBalance(btcb, master.address, 1000);
+    await expect(
+      master.connect(tokenHolder1).liqCharge(1)
+    ).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder1.address],
+      [-333, 333]
+    );
+    await expect(
+      master.connect(tokenHolder2).liqCharge(1)
+    ).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder2.address],
+      [-333, 333]
+    );
+
+    await expect(
+      master.connect(tokenHolder3).liqCharge(1)
+    ).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder3.address],
+      [-333, 333]
+    );
+
+    await expect(master.LiqHandleDust(1)).to.changeTokenBalances(
+      btcb,
+      [master.address, owner.address],
+      [-1, 1]
+    );
+  });
+
+  it("UNIT: Owner must not be able to handle dust for liquidity payments after payments charged if there is no dust generated", async function () {
+    const [owner, payerWallet, tokenHolder1, tokenHolder2, tokenHolder3] =
+      await ethers.getSigners();
+    await master.mintMaster(tokenHolder1.address, 10000);
+    await master.mintMaster(tokenHolder2.address, 10000);
+    await master.mintMaster(tokenHolder3.address, 10000);
+    await btcb.transfer(payerWallet.address, 1000);
+    await btcb.transfer(tokenHolder1.address, 100);
+    await btcb.transfer(tokenHolder2.address, 100);
+    await btcb.transfer(tokenHolder3.address, 100);
+
+    amt.connect(tokenHolder1).approve(master.address, 10000);
+    btcb.connect(tokenHolder1).approve(master.address, 100);
+
+    amt.connect(tokenHolder2).approve(master.address, 10000);
+    btcb.connect(tokenHolder2).approve(master.address, 100);
+
+    amt.connect(tokenHolder3).approve(master.address, 10000);
+    btcb.connect(tokenHolder3).approve(master.address, 100);
+
+    master.connect(tokenHolder1).addLiquidity(10000, 100);
+    master.connect(tokenHolder2).addLiquidity(10000, 100);
+    master.connect(tokenHolder3).addLiquidity(10000, 100);
+    await expect(
+      master.connect(payerWallet).payRent(999, 0)
+    ).to.changeTokenBalance(btcb, master.address, 999);
+    await expect(
+      master.connect(tokenHolder1).liqCharge(1)
+    ).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder1.address],
+      [-333, 333]
+    );
+    await expect(
+      master.connect(tokenHolder2).liqCharge(1)
+    ).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder2.address],
+      [-333, 333]
+    );
+
+    await expect(
+      master.connect(tokenHolder3).liqCharge(1)
+    ).to.changeTokenBalances(
+      btcb,
+      [master.address, tokenHolder3.address],
+      [-333, 333]
+    );
+
+    await expect(master.LiqHandleDust(1)).to.revertedWith(
+      "Nothing to collect from dust"
     );
   });
 });

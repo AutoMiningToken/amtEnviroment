@@ -12,6 +12,7 @@ import "./Master.sol";
 /// @notice This contract allows for the buying and selling of AMT tokens with USDT
 contract Market is Context, Ownable {
     using SafeERC20 for IERC20;
+    using SafeERC20 for Amt;
     Amt private immutable amt;
     IERC20 private immutable btcb;
     IERC20 private immutable usdt;

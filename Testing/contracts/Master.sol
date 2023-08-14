@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 //imports for liquitity interactions
 import "./IUniswapV2Router02.sol";
@@ -9,17 +9,27 @@ import "./IUniswapV2Factory.sol";
 import "./Amt.sol";
 import "./LiquidityAmt.sol";
 
-//Standar imports
+//Standard imports
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 //Timelock import
 import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
 
-/*
+/**
+ * @title liqLocker
+ * @notice This contract is a specialized token timelock for managing liquidity.
+ * It inherits from OpenZeppelin's TokenTimelock contract.
+ *
+ * The contract holds tokens until a specified time, and then allows a beneficiary to withdraw them.
+ * In addition, it provides functionality to charge tokens via the Master contract.
+ * The contract also interacts with IERC20 tokens and other contracts like Uniswap's Router and Factory contracts.
+ */
 contract liqLocker is TokenTimelock {
-    Master masterContract;
-    IERC20 btcb;
-    IERC20 liqToken;
+    using SafeERC20 for IERC20;
+    Master private masterContract;
+    IERC20 private btcb;
+    IERC20 private liqToken;
 
     constructor(
         IERC20 token_,
@@ -29,6 +39,14 @@ contract liqLocker is TokenTimelock {
         uint256 releaseTime_,
         address masterContract_
     ) TokenTimelock(token_, beneficiary_, releaseTime_) {
+        require(
+            beneficiary_ != address(0),
+            "Beneficiary must not be the zero address"
+        );
+        require(
+            masterContract_ != address(0),
+            "Master must not be the zero address"
+        );
         masterContract = Master(masterContract_);
         btcb = btcb_;
         liqToken = liqToken_;
@@ -36,7 +54,10 @@ contract liqLocker is TokenTimelock {
 
     function charge(uint256 snapId) public {
         masterContract.liqCharge(snapId);
-        btcb.transfer(beneficiary(), btcb.balanceOf(address(this)));
+        btcb.transfer(
+            beneficiary(),
+            btcb.balanceOf(address(this))
+        );
     }
 
     function release() public virtual override {
@@ -48,33 +69,85 @@ contract liqLocker is TokenTimelock {
         uint256 amount = token().balanceOf(address(this));
         require(amount > 0, "TokenTimelock: no tokens to release");
 
-        token().transfer(address(masterContract), amount);
+        token().transfer(
+            address(masterContract),
+            amount
+        );
         liqToken.transfer(beneficiary(), amount);
     }
 }
-*/
+
+/// @title Master Contract
+/// @notice This contract manages payments, liquidity, and token interactions.
+/// @dev Extends the Ownable contract, providing a mechanism to prevent unauthorized access to certain methods.
 contract Master is Ownable {
+    using SafeERC20 for IERC20;
+    using SafeERC20 for Amt;
+    using SafeERC20 for LiquidityAmt;
+    /// @notice The address of the liquidity locker
     address public addrLiqLocker;
 
-    bool liqLocked = false;
+    /// @notice Flag indicating if liquidity is locked
+    bool public liqLocked;
 
-    Amt amt;
-    IERC20 btcb;
-    LiquidityAmt liqToken;
-    IERC20 externalLiqToken;
-    address addrRouter = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
-    IUniswapV2Router02 liqRouter = IUniswapV2Router02(addrRouter);
-    IUniswapV2Factory liqFactory;
+    /// @notice Instance of the AMT token
+    Amt private amt;
+
+    /// @notice Instance of the BTCB token
+    IERC20 private btcb;
+
+    /// @notice Instance of the liquidity token
+    LiquidityAmt private liqToken;
+
+    /// @notice Instance of the external liquidity token
+    IERC20 private externalLiqToken;
+
+    /// @notice The address of the Uniswap router
+    address public addrRouter;
+
+    /// @notice Instance of the Uniswap router
+    IUniswapV2Router02 private immutable liqRouter;
+
+    /// @notice Instance of the Uniswap factory
+    IUniswapV2Factory private liqFactory;
+
+    /// @notice The address of the vault
     address public vault;
+
+    /// @notice The address of the liquidity pool
     address public liqPool;
-    address public payerWallet; // wallet which makes payments
 
-    address constant addrBtcb = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
+    /// @notice The amount of milisecs to use as a deadline in addLiquidity and removeLiquidity of router
+    uint256 constant milisecsToValidate = 60;
 
-    mapping(uint256 => uint256) public pays; // snapId -> corresponding amount payed on that snapshot, registry of the amount of btcb payed on specific snapshot
-    mapping(uint256 => uint256) public liqPays; // snapId -> corresponding amount payd on that snapshot to liq providers
-    mapping(address => mapping(uint256 => bool)) public alreadyCharged; // Registry of already charged by address for normal pays
-    mapping(address => mapping(uint256 => bool)) public liqAlreadyCharged; //Registry of already charged by address for liquidity providers
+    /// @notice The address of the wallet that makes payments
+    address public payerWallet;
+
+    /// @notice Constant address of the BTCB token
+    address public constant addrBtcb =
+        0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
+
+    /// @notice Mapping of snapshot IDs to corresponding amounts paid on that snapshot
+    mapping(uint256 => uint256) public pays;
+    /// @notice Mapping of snapshot IDs to corresponding amounts paid on that snapshot to liquidity providers
+    mapping(uint256 => uint256) public liqPays;
+    /// @notice Mapping of addresses to snapshot IDs indicating if they've already been charged
+    mapping(address => mapping(uint256 => bool)) public alreadyCharged;
+    /// @notice Mapping of addresses to snapshot IDs indicating if liquidity providers have already been charged
+    mapping(address => mapping(uint256 => bool)) public liqAlreadyCharged;
+
+    /// @notice Amount to approve for transactions
+    uint256 public amountForApproval = 99999999999999999999 * (10 ** 18);
+
+    /// @notice Mapping of amount of btcb charged in a snapshot
+    mapping(uint256 => uint256) public chargedAt;
+    /// @notice Mapping of the amount of amt used to charge in a snapshot
+    mapping(uint256 => uint256) public amtUsedAt;
+
+    /// @notice Mapping of amount of btcb charged in a snapshot
+    mapping(uint256 => uint256) public LiqChargedAt;
+    /// @notice Mapping of the amount of amt used to charge in a snapshot
+    mapping(uint256 => uint256) public LiqAmtUsedAt;
 
     event payerWalletSet(address newPayerWallet);
     event rentPaid(uint256 amount, uint256 vaultPart);
@@ -84,9 +157,9 @@ contract Master is Ownable {
     event liqRemoved(uint256 amountAmt, uint256 amountBtcb, address from);
     event masterHasMinted(address addr, uint256 amount);
     event charged(uint snapId, address user, uint256 amount);
+    event dustCollected(uint snapId, uint256 dustCollected);
 
-    uint256 amountForApproval = 99999999999999999999 * (10 ** 18);
-
+    /// @notice Contract constructor, initializes instances, create the pair for the liquidity pool, and sets initial addresses
     constructor(
         address _amt,
         address _btcb, //Testing
@@ -95,26 +168,37 @@ contract Master is Ownable {
         address _payerWallet,
         address _liqRouter
     ) {
+        require(_amt != address(0), "Amt must not be the zero address");
+        require(_vault != address(0), "Vault must not be the zero address");
+        require(
+            _liqToken != address(0),
+            "LiqToken must not be the zero address"
+        );
+        require(
+            _payerWallet != address(0),
+            "PayerWallet must not be the zero address"
+        );
         amt = Amt(_amt);
         btcb = IERC20(_btcb);
         liqToken = LiquidityAmt(_liqToken);
 
-        //Testing
-        liqRouter = IUniswapV2Router02(_liqRouter);
-        liqPool = _liqRouter;
-        externalLiqToken = IERC20(_liqRouter);
-        addrRouter = _liqRouter;
+        //Testing enviroment changes
 
         //liqFactory = IUniswapV2Factory(liqRouter.factory());
+        liqRouter = IUniswapV2Router02(_liqRouter);
         //externalLiqToken = IERC20(liqFactory.createPair(_amt, addrBtcb));
+        externalLiqToken = IERC20(_liqRouter);
+        addrRouter = _liqRouter;
         vault = _vault;
         //liqPool = address(externalLiqToken);
+        liqPool = _liqRouter;
         btcb.approve(addrRouter, amountForApproval);
         amt.approve(addrRouter, amountForApproval);
         payerWallet = _payerWallet;
     }
 
-    // Extended approve function
+    /// @notice Extends the approval for the AMT and BTCB tokens to the liquidity router
+    /// @dev Can only be called by the contract owner
     function extendApprove(uint256 amount) public onlyOwner {
         amt.approve(addrRouter, amount);
         btcb.approve(addrRouter, amount);
@@ -122,13 +206,19 @@ contract Master is Ownable {
         emit approveExtended(amount);
     }
 
-    // Change payer wallet
+    /// @notice Sets a new payer wallet
+    /// @dev Can only be called by the contract owner
     function setPayerWallet(address newPayerWallet) public onlyOwner {
+        require(
+            newPayerWallet != address(0),
+            "Payer wallet must not be the zero address"
+        );
         payerWallet = newPayerWallet;
 
         emit payerWalletSet(newPayerWallet);
     }
 
+    /// @notice Pay the rent to token holders and liquidity providers and sends to vault the corresponding participation
     function payRent(uint256 amountBtcb, uint256 vaultParticipation) public {
         require(
             btcb.balanceOf(msg.sender) >= amountBtcb,
@@ -138,7 +228,7 @@ contract Master is Ownable {
             vaultParticipation <= 100,
             "vaultParticipation cannot be higher than 100"
         );
-        require(amountBtcb > 100, "amount to small");
+        require(amountBtcb > 100, "amount too small");
         require(
             msg.sender == payerWallet,
             "Only PayerWallet can make the payments"
@@ -151,14 +241,12 @@ contract Master is Ownable {
 
         uint256 toHolders = amountBtcb - toVault - toLiqProviders;
 
-        bool btcbTransfer1 = btcb.transferFrom(
+        btcb.transferFrom(
             msg.sender,
             address(this),
             amountBtcb - toVault
         );
-        bool btcbTransfer2 = btcb.transferFrom(msg.sender, vault, toVault);
-
-        require(btcbTransfer1 && btcbTransfer2, "Transfer failed");
+        btcb.transferFrom(msg.sender, vault, toVault);
 
         uint256 snap = amt.snapshot();
         uint256 liqSnap = liqToken.snapshot();
@@ -169,7 +257,9 @@ contract Master is Ownable {
         emit rentPaid(amountBtcb, vaultParticipation);
     }
 
-    //Charge function for AMT holders
+    /// @notice Charge method for AMT holders to claim their payment for a given snapshot.
+    /// @param snapId The id of the snapshot to claim the payment from.
+    /// @return The amount of BTCB charged to the AMT holder.
     function charge(uint256 snapId) public returns (uint256) {
         require(alreadyCharged[msg.sender][snapId] == false, "Already charged");
         require(amt.balanceOfAt(msg.sender, snapId) > 0, "Nothing to charge");
@@ -178,15 +268,20 @@ contract Master is Ownable {
 
         uint256 toPay = (pays[snapId] * amt.balanceOfAt(msg.sender, snapId)) /
             (amt.totalSupplyAt(snapId) - amt.balanceOfAt(liqPool, snapId));
-        bool btcbTransfer = btcb.transfer(msg.sender, toPay);
 
-        require(btcbTransfer, "Transfer fail");
+        chargedAt[snapId] += toPay;
+        amtUsedAt[snapId] += amt.balanceOfAt(msg.sender, snapId);
+        btcb.transfer(msg.sender, toPay);
 
         emit charged(snapId, msg.sender, toPay);
 
         return toPay;
     }
 
+    /// @notice Allows an AMT holder to claim their payments over a range of snapshots.
+    /// @param from The starting snapshot id.
+    /// @param to The ending snapshot id.
+    /// @return The total amount of BTCB charged to the AMT holder for the range of snapshots.
     function chargeFromTo(uint256 from, uint256 to) public returns (uint256) {
         uint256 currentSnap = amt.getCurrentSnapshotId();
         require(to <= currentSnap, "Select a valid snapshot range");
@@ -202,20 +297,36 @@ contract Master is Ownable {
                     (amt.totalSupplyAt(i) - amt.balanceOfAt(liqPool, i));
                 toPay += paidAti;
                 alreadyCharged[msg.sender][i] = true;
-
+                chargedAt[i] = paidAti;
+                amtUsedAt[i] = amt.balanceOfAt(msg.sender, i);
                 emit charged(i, msg.sender, paidAti);
             }
         }
 
         require(toPay > 0, "There was nothing to transfer");
 
-        bool btcbTransfer = btcb.transfer(msg.sender, toPay);
-
-        require(btcbTransfer, "Transfer fail");
+        btcb.transfer(msg.sender, toPay);
 
         return toPay;
     }
 
+    /// @notice handles the dust generated on a given snapshot at the moment of execution
+    /// @param snapId the Id of the snapshot to handle the dust
+    /// @dev Can only be called by the contract owner
+    /// @return dust collected from given snapshot
+    function handleDust(uint256 snapId) public onlyOwner returns (uint256) {
+        uint256 dust = ((pays[snapId] * amtUsedAt[snapId]) /
+            (amt.totalSupplyAt(snapId) - amt.balanceOfAt(liqPool, snapId))) -
+            chargedAt[snapId];
+        chargedAt[snapId] += dust;
+        require(dust > 0, "Nothing to collect from dust");
+        btcb.transfer(msg.sender, dust);
+        emit dustCollected(snapId, dust);
+        return dust;
+    }
+
+    /// @notice Allows a liquidity provider to claim their payment for a given snapshot.
+    /// @param snapId The id of the snapshot to claim the payment from.
     function liqCharge(uint256 snapId) public {
         require(
             liqAlreadyCharged[msg.sender][snapId] == false,
@@ -226,15 +337,18 @@ contract Master is Ownable {
             "Nothing to charge"
         );
         liqAlreadyCharged[msg.sender][snapId] = true;
-        bool btcbTransfer = btcb.transfer(
-            msg.sender,
-            (liqPays[snapId] * liqToken.balanceOfAt(msg.sender, snapId)) /
-                liqToken.totalSupplyAt(snapId)
-        );
-
-        require(btcbTransfer, "Transfer failed");
+        uint256 liqToPay = (liqPays[snapId] *
+            liqToken.balanceOfAt(msg.sender, snapId)) /
+            liqToken.totalSupplyAt(snapId);
+        LiqChargedAt[snapId] += liqToPay;
+        LiqAmtUsedAt[snapId] += liqToken.balanceOfAt(msg.sender, snapId);
+        btcb.transfer(msg.sender, liqToPay);
     }
 
+    /// @notice Allows a liquidity provider to claim their payments over a range of snapshots.
+    /// @param from The starting snapshot id.
+    /// @param to The ending snapshot id.
+    /// @return The total amount of BTCB charged to the liquidity provider for the range of snapshots.
     function liqChargeFromTo(
         uint256 from,
         uint256 to
@@ -255,24 +369,40 @@ contract Master is Ownable {
                     liqToken.balanceOfAt(msg.sender, i)) /
                     (liqToken.totalSupplyAt(i));
                 toPay += paidAti;
-
+                LiqChargedAt[i] += paidAti;
+                LiqAmtUsedAt[i] += liqToken.balanceOfAt(msg.sender, i);
                 emit charged(i, msg.sender, paidAti);
             }
         }
 
         require(toPay > 0, "There was nothing to transfer");
-
-        bool btcbTransfer = btcb.transfer(msg.sender, toPay);
-
-        require(btcbTransfer, "Transfer fail");
-
+        btcb.transfer(msg.sender, toPay);
         return toPay;
     }
 
-    /*
+    /// @notice handles the dust generated on a given snapshot for liquidity providers at the moment of execution
+    /// @param snapId the Id of the snapshot to handle the dust
+    /// @dev Can only be called by the contract owner
+    /// @return dust collected from given snapshot
+    function LiqHandleDust(uint256 snapId) public onlyOwner returns (uint256) {
+        uint256 dust = ((liqPays[snapId] * LiqAmtUsedAt[snapId]) /
+            liqToken.totalSupplyAt(snapId)) - LiqChargedAt[snapId];
+        LiqChargedAt[snapId] += dust;
+        require(dust > 0, "Nothing to collect from dust");
+        btcb.transfer(msg.sender, dust);
+        emit dustCollected(snapId, dust);
+        return dust;
+    }
+
+    /// @notice Adds liquidity to the contract and locks it for two years, can only be called by the contract owner.
+    /// @param amountAmt The amount of AMT to be added.
+    /// @param amountBtcb The amount of BTCB to be added.
     function addLiquidityLocking(
         uint256 amountAmt,
-        uint256 amountBtcb
+        uint256 amountBtcb,
+        address beneficiary,
+        uint256 releaseTime,
+        address masterContract
     ) public onlyOwner {
         //Transaction variables
 
@@ -285,80 +415,12 @@ contract Master is Ownable {
 
         liqLocked = true;
 
-        bool amtTransfer1 = amt.transferFrom(
+        amt.transferFrom(
             msg.sender,
             address(this),
             amountAmt
         );
-        bool btcbTransfer1 = btcb.transferFrom(
-            msg.sender,
-            address(this),
-            amountBtcb
-        );
-
-        uint256 amountLiquidityCreated;
-        uint256 amountAmtToLiq;
-        uint256 amountBtcbToLiq;
-
-        (amountAmtToLiq, amountBtcbToLiq, amountLiquidityCreated) = liqRouter
-            .addLiquidity(
-                address(amt),
-                address(btcb),
-                amountAmt,
-                amountBtcb,
-                (amountAmt * (100 - 2)) / 100,
-                (amountBtcb * (100 - 2)) / 100,
-                address(this),
-                block.timestamp + 60
-            );
-
-        //Deploy of timelock
-        uint256 lockingTime = 60 * 60 * 24 * 365 * 2; // locking time in secs
-        liqLocker contractLiqLocker = new liqLocker(
-            externalLiqToken,
-            btcb,
-            liqToken,
-            msg.sender,
-            block.timestamp + lockingTime,
-            address(this)
-        );
-        externalLiqToken.transfer(
-            address(contractLiqLocker),
-            amountLiquidityCreated
-        );
-        liqToken.mint(address(contractLiqLocker), amountLiquidityCreated);
-        bool amtTransfer2 = amt.transfer(
-            msg.sender,
-            amountAmt - amountAmtToLiq
-        );
-        bool btcbTransfer2 = btcb.transfer(
-            msg.sender,
-            amountBtcb - amountBtcbToLiq
-        );
-        addrLiqLocker = address(contractLiqLocker);
-
-        require(
-            amtTransfer1 && amtTransfer2 && btcbTransfer1 && btcbTransfer2,
-            "Transfer failed"
-        );
-
-        emit liqLockingAdded(amountAmtToLiq, amountBtcbToLiq, msg.sender);
-    }
-*/
-    //Master add liquidity provider function
-    function addLiquidity(uint256 amountAmt, uint256 amountBtcb) public {
-        //Check requirements
-        require(amt.balanceOf(msg.sender) >= amountAmt, "Not enough AMT");
-        require(btcb.balanceOf(msg.sender) >= amountBtcb, "Not enough BBTC");
-        require(amountAmt > 1, "AMT amount is too small");
-        require(amountBtcb > 1, "BTCB amount is too small");
-
-        bool amtTransfer1 = amt.transferFrom(
-            msg.sender,
-            address(this),
-            amountAmt
-        );
-        bool btcbTransfer1 = btcb.transferFrom(
+        btcb.transferFrom(
             msg.sender,
             address(this),
             amountBtcb
@@ -379,29 +441,88 @@ contract Master is Ownable {
                 address(this),
                 block.timestamp + 60
             );
-        liqToken.mint(msg.sender, amountLiquidityCreated);
-        bool amtTransfer2 = amt.transfer(
+
+        //Deploy of timelock
+        uint256 lockingTime = 60 * 60 * 24 * 365 * 2; // locking time in secs
+        liqLocker contractLiqLocker = new liqLocker(
+            externalLiqToken,
+            btcb,
+            liqToken,
+            beneficiary,
+            block.timestamp + releaseTime,
+            masterContract
+        );
+        externalLiqToken.transfer(
+            address(contractLiqLocker),
+            amountLiquidityCreated
+        );
+        liqToken.mint(address(contractLiqLocker), amountLiquidityCreated);
+        amt.transfer(
             msg.sender,
             amountAmt - amountAmtToLiq
         );
-        bool btcbTransfer2 = btcb.transfer(
+        btcb.transfer(
+            msg.sender,
+            amountBtcb - amountBtcbToLiq
+        );
+        addrLiqLocker = address(contractLiqLocker);
+        emit liqLockingAdded(amountAmtToLiq, amountBtcbToLiq, msg.sender);
+    }
+
+    /// @notice Allows any user to add liquidity to the liquidity pool.
+    /// @param amountAmt The amount of AMT to be added.
+    /// @param amountBtcb The amount of BTCB to be added.
+    function addLiquidity(uint256 amountAmt, uint256 amountBtcb) public {
+        //Check requirements
+        require(amt.balanceOf(msg.sender) >= amountAmt, "Not enough AMT");
+        require(btcb.balanceOf(msg.sender) >= amountBtcb, "Not enough BBTC");
+        require(amountAmt > 1, "AMT amount is too small");
+        require(amountBtcb > 1, "BTCB amount is too small");
+
+        amt.transferFrom(
+            msg.sender,
+            address(this),
+            amountAmt
+        );
+        btcb.transferFrom(
+            msg.sender,
+            address(this),
+            amountBtcb
+        );
+
+        uint256 amountLiquidityCreated;
+        uint256 amountAmtToLiq;
+        uint256 amountBtcbToLiq;
+
+        (amountAmtToLiq, amountBtcbToLiq, amountLiquidityCreated) = liqRouter
+            .addLiquidity(
+                address(amt),
+                address(btcb),
+                amountAmt,
+                amountBtcb,
+                (amountAmt * (98)) / 100,
+                (amountBtcb * (98)) / 100,
+                address(this),
+                block.timestamp + milisecsToValidate
+            );
+        liqToken.mint(msg.sender, amountLiquidityCreated);
+        amt.transfer(
+            msg.sender,
+            amountAmt - amountAmtToLiq
+        );
+        btcb.transfer(
             msg.sender,
             amountBtcb - amountBtcbToLiq
         );
 
-        require(
-            amtTransfer1 && amtTransfer2 && btcbTransfer1 && btcbTransfer2,
-            "Transfer failed"
-        );
 
         emit liqAdded(amountAmtToLiq, amountBtcbToLiq, msg.sender);
     }
 
-    //Master remove liquidity provider function
+    /// @notice Allows any user to remove liquidity from the liquidity pool.
+    /// @param amount The amount of liquidity to be removed.
     function removeLiquidity(uint256 amount) public {
         require(liqToken.balanceOf(msg.sender) >= amount, "Not enough liqAMT");
-
-        uint256 milisecsToValidate = 60;
         uint256 amountAmtFromLiq;
         uint256 amountBtcbFromLiq;
 
@@ -417,16 +538,17 @@ contract Master is Ownable {
             block.timestamp + milisecsToValidate
         );
         liqToken.burnFrom(msg.sender, amount);
-        bool amtTransfer = amt.transfer(msg.sender, amountAmtFromLiq);
-        bool btcbTransfer = btcb.transfer(msg.sender, amountBtcbFromLiq);
-
-        require(amtTransfer && btcbTransfer, "Transfer failed");
+        amt.transfer(msg.sender, amountAmtFromLiq);
+        btcb.transfer(msg.sender, amountBtcbFromLiq);
 
         emit liqRemoved(amountAmtFromLiq, amountBtcbFromLiq, msg.sender);
     }
 
-    // Minting function for AMT
+    /// @notice Allows the contract owner to mint AMT.
+    /// @param account The address to receive the minted AMT.
+    /// @param amount The amount of AMT to be minted.
     function mintMaster(address account, uint256 amount) public onlyOwner {
+        require(account != address(0), "Can not mint to zero address");
         amt.mint(account, amount);
         emit masterHasMinted(account, amount);
     }
