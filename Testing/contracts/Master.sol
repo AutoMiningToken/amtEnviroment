@@ -297,8 +297,8 @@ contract Master is Ownable {
                     (amt.totalSupplyAt(i) - amt.balanceOfAt(liqPool, i));
                 toPay += paidAti;
                 alreadyCharged[msg.sender][i] = true;
-                chargedAt[i] = paidAti;
-                amtUsedAt[i] = amt.balanceOfAt(msg.sender, i);
+                chargedAt[i] += paidAti;
+                amtUsedAt[i] += amt.balanceOfAt(msg.sender, i);
                 emit charged(i, msg.sender, paidAti);
             }
         }

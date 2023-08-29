@@ -290,15 +290,15 @@ contract Master is Ownable {
                     (amt.totalSupplyAt(i) - amt.balanceOfAt(liqPool, i));
                 toPay += paidAti;
                 alreadyCharged[msg.sender][i] = true;
-                chargedAt[i] = paidAti;
-                amtUsedAt[i] = amt.balanceOfAt(msg.sender, i);
+                chargedAt[i] += paidAti;
+                amtUsedAt[i] += amt.balanceOfAt(msg.sender, i);
                 emit charged(i, msg.sender, paidAti);
             }
         }
 
         require(toPay > 0, "There was nothing to transfer");
 
-        btcb.transfer(msg.sender, toPay);
+        btcb.safeTransfer(msg.sender, toPay);
 
         return toPay;
     }
