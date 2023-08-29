@@ -35,7 +35,7 @@ contract BurnVault is Ownable {
 
         amt.burnFrom(msg.sender, amount);
 
-        btcb.transfer(msg.sender, btcbToTransfer);
+        btcb.safeTransfer(msg.sender, btcbToTransfer);
 
         emit burnMade(amount, btcbToTransfer);
     }

@@ -54,7 +54,7 @@ contract liqLocker is TokenTimelock {
 
     function charge(uint256 snapId) public {
         masterContract.liqCharge(snapId);
-        btcb.transfer(
+        btcb.safeTransfer(
             beneficiary(),
             btcb.balanceOf(address(this))
         );
@@ -69,11 +69,11 @@ contract liqLocker is TokenTimelock {
         uint256 amount = token().balanceOf(address(this));
         require(amount > 0, "TokenTimelock: no tokens to release");
 
-        token().transfer(
+        token().safeTransfer(
             address(masterContract),
             amount
         );
-        liqToken.transfer(beneficiary(), amount);
+        liqToken.safeTransfer(beneficiary(), amount);
     }
 }
 
@@ -234,12 +234,12 @@ contract Master is Ownable {
 
         uint256 toHolders = amountBtcb - toVault - toLiqProviders;
 
-        btcb.transferFrom(
+        btcb.safeTransferFrom(
             msg.sender,
             address(this),
             amountBtcb - toVault
         );
-        btcb.transferFrom(msg.sender, vault, toVault);
+        btcb.safeTransferFrom(msg.sender, vault, toVault);
 
         uint256 snap = amt.snapshot();
         uint256 liqSnap = liqToken.snapshot();
@@ -264,7 +264,7 @@ contract Master is Ownable {
 
         chargedAt[snapId] += toPay;
         amtUsedAt[snapId] += amt.balanceOfAt(msg.sender, snapId);
-        btcb.transfer(msg.sender, toPay);
+        btcb.safeTransfer(msg.sender, toPay);
 
         emit charged(snapId, msg.sender, toPay);
 
@@ -313,7 +313,7 @@ contract Master is Ownable {
             chargedAt[snapId];
         chargedAt[snapId] += dust;
         require(dust > 0, "Nothing to collect from dust");
-        btcb.transfer(msg.sender, dust);
+        btcb.safeTransfer(msg.sender, dust);
         emit dustCollected(snapId, dust);
         return dust;
     }
@@ -335,7 +335,7 @@ contract Master is Ownable {
             liqToken.totalSupplyAt(snapId);
         LiqChargedAt[snapId] += liqToPay;
         LiqAmtUsedAt[snapId] += liqToken.balanceOfAt(msg.sender, snapId);
-        btcb.transfer(msg.sender, liqToPay);
+        btcb.safeTransfer(msg.sender, liqToPay);
     }
 
     /// @notice Allows a liquidity provider to claim their payments over a range of snapshots.
@@ -369,7 +369,7 @@ contract Master is Ownable {
         }
 
         require(toPay > 0, "There was nothing to transfer");
-        btcb.transfer(msg.sender, toPay);
+        btcb.safeTransfer(msg.sender, toPay);
         return toPay;
     }
 
@@ -382,7 +382,7 @@ contract Master is Ownable {
             liqToken.totalSupplyAt(snapId)) - LiqChargedAt[snapId];
         LiqChargedAt[snapId] += dust;
         require(dust > 0, "Nothing to collect from dust");
-        btcb.transfer(msg.sender, dust);
+        btcb.safeTransfer(msg.sender, dust);
         emit dustCollected(snapId, dust);
         return dust;
     }
@@ -405,12 +405,12 @@ contract Master is Ownable {
 
         liqLocked = true;
 
-        amt.transferFrom(
+        amt.safeTransferFrom(
             msg.sender,
             address(this),
             amountAmt
         );
-        btcb.transferFrom(
+        btcb.safeTransferFrom(
             msg.sender,
             address(this),
             amountBtcb
@@ -442,16 +442,16 @@ contract Master is Ownable {
             block.timestamp + lockingTime,
             address(this)
         );
-        externalLiqToken.transfer(
+        externalLiqToken.safeTransfer(
             address(contractLiqLocker),
             amountLiquidityCreated
         );
         liqToken.mint(address(contractLiqLocker), amountLiquidityCreated);
-        amt.transfer(
+        amt.safeTransfer(
             msg.sender,
             amountAmt - amountAmtToLiq
         );
-        btcb.transfer(
+        btcb.safeTransfer(
             msg.sender,
             amountBtcb - amountBtcbToLiq
         );
@@ -469,12 +469,12 @@ contract Master is Ownable {
         require(amountAmt > 1, "AMT amount is too small");
         require(amountBtcb > 1, "BTCB amount is too small");
 
-        amt.transferFrom(
+        amt.safeTransferFrom(
             msg.sender,
             address(this),
             amountAmt
         );
-        btcb.transferFrom(
+        btcb.safeTransferFrom(
             msg.sender,
             address(this),
             amountBtcb
@@ -496,11 +496,11 @@ contract Master is Ownable {
                 block.timestamp + milisecsToValidate
             );
         liqToken.mint(msg.sender, amountLiquidityCreated);
-        amt.transfer(
+        amt.safeTransfer(
             msg.sender,
             amountAmt - amountAmtToLiq
         );
-        btcb.transfer(
+        btcb.safeTransfer(
             msg.sender,
             amountBtcb - amountBtcbToLiq
         );
@@ -528,8 +528,8 @@ contract Master is Ownable {
             block.timestamp + milisecsToValidate
         );
         liqToken.burnFrom(msg.sender, amount);
-        amt.transfer(msg.sender, amountAmtFromLiq);
-        btcb.transfer(msg.sender, amountBtcbFromLiq);
+        amt.safeTransfer(msg.sender, amountAmtFromLiq);
+        btcb.safeTransfer(msg.sender, amountBtcbFromLiq);
 
         emit liqRemoved(amountAmtFromLiq, amountBtcbFromLiq, msg.sender);
     }
