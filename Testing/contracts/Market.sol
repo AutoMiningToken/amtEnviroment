@@ -75,12 +75,12 @@ contract Market is Context, Ownable {
             amtToUser <= amt.balanceOf(address(this)),
             "Market doesn't have enough AMT"
         );
-        usdt.transferFrom(
+        usdt.safeTransferFrom(
             msg.sender,
             adminWallet,
             amountUsdt
         );
-        amt.transfer(msg.sender, amtToUser);
+        amt.safeTransfer(msg.sender, amtToUser);
         emit amtBought(amountUsdt, amtToUser);
     }
 
@@ -100,8 +100,8 @@ contract Market is Context, Ownable {
             "Market doesn't have enough USDT"
         );
 
-        amt.transferFrom(msg.sender, adminWallet, amountAmt);
-        usdt.transfer(msg.sender, usdtToTransfer);
+        amt.safeTransferFrom(msg.sender, adminWallet, amountAmt);
+        usdt.safeTransfer(msg.sender, usdtToTransfer);
 
         emit userSold(usdtToTransfer, amountAmt);
     }
@@ -124,7 +124,7 @@ contract Market is Context, Ownable {
     /// @param snapId The id of the snapshot to charge
     function charge(uint256 snapId) public onlyOwner {
         uint256 amount = master.charge(snapId);
-        btcb.transfer(msg.sender, amount);
+        btcb.safeTransfer(msg.sender, amount);
 
         emit charged(snapId, amount);
     }
@@ -134,7 +134,7 @@ contract Market is Context, Ownable {
         uint256 balanceAmt = amt.balanceOf(address(this));
         uint256 balanceUsdt = usdt.balanceOf(address(this));
 
-        amt.transfer(adminWallet, balanceAmt);
-        usdt.transfer(adminWallet, balanceUsdt);
+        amt.safeTransfer(adminWallet, balanceAmt);
+        usdt.safeTransfer(adminWallet, balanceUsdt);
     }
 }
