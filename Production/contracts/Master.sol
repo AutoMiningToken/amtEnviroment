@@ -27,9 +27,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
  */
 contract liqLocker is TokenTimelock {
     using SafeERC20 for IERC20;
-    Master private masterContract;
-    IERC20 private btcb;
-    IERC20 private liqToken;
+    Master private immutable masterContract;
+    IERC20 private immutable btcb;
+    IERC20 private immutable liqToken;
 
     constructor(
         IERC20 token_,
