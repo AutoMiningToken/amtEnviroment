@@ -44,3 +44,25 @@ npm install
 ```
 patch -p1 < ../fixedPoint.patch
 ```
+
+## Usage
+
+In the Testing environment, we have custom npm commands tailored to various testing scenarios involving different initialization hashes for the pancakeLibrary pair. Here are the commands and their uses:
+
+1. Local Testing:
+
+```bash
+npm run test:local
+```
+
+2. Coverage Testing:
+
+```bash
+npm run test:coverage
+```
+
+3. Fork Testing:
+
+```bash
+npm run test:fork
+```
