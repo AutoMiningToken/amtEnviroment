@@ -47,15 +47,18 @@ contract Market is Context, Ownable {
         uint256 _usdPer100Amt,
         uint256 _fee,
         address _adminWallet,
-        address _btcb,
-        address _usdt
+        address _addrBtcb,
+        address _addrUsdt
     ) {
-        require(_addrMaster != address(0), "Can not set master to zero address");
+        require(
+            _addrMaster != address(0),
+            "Can not set master to zero address"
+        );
         require(_addrAMT != address(0), "Can not set amt to zero address");
         amt = Amt(_addrAMT);
         master = Master(_addrMaster);
-        btcb = IERC20(_btcb);
-        usdt = IERC20(_usdt);
+        btcb = IERC20(_addrBtcb);
+        usdt = IERC20(_addrUsdt);
         usdPer100Amt = _usdPer100Amt;
         fee = _fee;
         adminWallet = _adminWallet;
@@ -75,11 +78,7 @@ contract Market is Context, Ownable {
             amtToUser <= amt.balanceOf(address(this)),
             "Market doesn't have enough AMT"
         );
-        usdt.safeTransferFrom(
-            msg.sender,
-            adminWallet,
-            amountUsdt
-        );
+        usdt.safeTransferFrom(msg.sender, adminWallet, amountUsdt);
         amt.safeTransfer(msg.sender, amtToUser);
         emit amtBought(amountUsdt, amtToUser);
     }

@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
 import chai from "chai";
-import { TestERC20 } from "../typechain-types";
-import { Market } from "../typechain-types";
-import { TestMaster } from "../typechain-types";
+import { TestERC20 } from "../../typechain-types";
+import { Market } from "../../typechain-types";
+import { TestMaster } from "../../typechain-types";
 import { BigNumber } from "ethers";
 
 const { expect } = chai;
@@ -16,15 +16,19 @@ describe("Market constructor fail requires", function () {
   beforeEach(async function () {
     const [owner] = await ethers.getSigners();
     const Btcb = await ethers.getContractFactory("TestERC20");
-    btcb = (await Btcb.deploy(1000000000)) as TestERC20;
+    btcb = (await Btcb.deploy(1000000000, "Bitcoin", "BTCB")) as TestERC20;
     await btcb.deployed();
 
     const Amt = await ethers.getContractFactory("TestERC20");
-    amt = (await Amt.deploy(1000000000)) as TestERC20;
+    amt = (await Amt.deploy(
+      1000000000,
+      "Auto Mining Token",
+      "AMT"
+    )) as TestERC20;
     await amt.deployed();
 
     const Usdt = await ethers.getContractFactory("TestERC20");
-    usdt = (await Usdt.deploy(1000000000)) as TestERC20;
+    usdt = (await Usdt.deploy(1000000000, "USDT Tether", "USDT")) as TestERC20;
     await usdt.deployed();
 
     const MasterTrucho = await ethers.getContractFactory("TestMaster");

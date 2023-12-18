@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
 import chai from "chai";
-import { TestERC20 } from "../typechain-types";
-import { Market } from "../typechain-types";
-import { TestMaster } from "../typechain-types";
+import { TestERC20 } from "../../typechain-types";
+import { Market } from "../../typechain-types";
+import { TestMaster } from "../../typechain-types";
 import { BigNumber } from "ethers";
 
 const { expect } = chai;
@@ -16,15 +16,19 @@ describe("Market", function () {
   beforeEach(async function () {
     const [owner] = await ethers.getSigners();
     const Btcb = await ethers.getContractFactory("TestERC20");
-    btcb = (await Btcb.deploy(1000000000)) as TestERC20;
+    btcb = (await Btcb.deploy(1000000000, "Bitcoin", "BTCB")) as TestERC20;
     await btcb.deployed();
 
     const Amt = await ethers.getContractFactory("TestERC20");
-    amt = (await Amt.deploy(1000000000)) as TestERC20;
+    amt = (await Amt.deploy(
+      1000000000,
+      "Auto Mining Token",
+      "AMT"
+    )) as TestERC20;
     await amt.deployed();
 
     const Usdt = await ethers.getContractFactory("TestERC20");
-    usdt = (await Usdt.deploy(1000000000)) as TestERC20;
+    usdt = (await Usdt.deploy(1000000000, "USDT Tether", "USDT")) as TestERC20;
     await usdt.deployed();
 
     const MasterTrucho = await ethers.getContractFactory("TestMaster");
@@ -56,16 +60,16 @@ describe("Market", function () {
     );
   });
 
-  it("Owner must be able to change fee", async function(){
+  it("Owner must be able to change fee", async function () {
     const [owner] = await ethers.getSigners();
     await market.setFee(980);
     expect(await market.fee()).to.equal(980);
-  })
+  });
 
-  it("Owner must not able to change fee to a value greater than 1000", async function(){
+  it("Owner must not able to change fee to a value greater than 1000", async function () {
     const [owner] = await ethers.getSigners();
     expect(market.setFee(1001)).to.revertedWith("Fee must be lesser than 1000");
-  })
+  });
 
   it("User should be able to buy at defined rate", async function () {
     const [owner, user] = await ethers.getSigners();
@@ -163,7 +167,7 @@ describe("Market", function () {
 
     await expect(market.connect(user).buy(usdtToSend))
       .to.emit(market, "amtBought")
-      .withArgs(usdtToSend,expectedAmtToRecive);
+      .withArgs(usdtToSend, expectedAmtToRecive);
   });
 
   it("User should be able to sell at defined rate paying the fee", async function () {

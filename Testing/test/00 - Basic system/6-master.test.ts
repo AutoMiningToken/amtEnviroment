@@ -5,10 +5,10 @@ import {
   Master,
   TestERC20,
   TestLiqPoolAndRouter,
-} from "../typechain-types";
-import { Amt } from "../typechain-types";
-import { BurnVault } from "../typechain-types";
-import { LiqLocker } from "../typechain-types";
+} from "../../typechain-types";
+import { Amt } from "../../typechain-types";
+import { BurnVault } from "../../typechain-types";
+import { LiqLocker } from "../../typechain-types";
 const { expect } = chai;
 
 describe("Master", function () {
@@ -25,7 +25,7 @@ describe("Master", function () {
       await ethers.getSigners();
 
     const Btcb = await ethers.getContractFactory("TestERC20");
-    btcb = (await Btcb.deploy(1000000000)) as TestERC20;
+    btcb = (await Btcb.deploy(1000000000, "Bitcoin", "BTCB")) as TestERC20;
     await btcb.deployed();
 
     const Amt = await ethers.getContractFactory("Amt");

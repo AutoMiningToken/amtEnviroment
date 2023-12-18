@@ -1,0 +1,36 @@
+{
+  "tokens": [
+    {
+      "name": "USD Tether",
+      "symbol": "USDT",
+      "supply": "90000000000"
+    },
+    {
+      "name": "Bitcoin B",
+      "symbol": "BTCB",
+      "supply": "21000000"
+    }
+  ],
+  "initialBalances": [
+    {
+      "USDT": "1000000",
+      "BTCB": "10",
+      "AMT": "100000"
+    },
+    {
+      "USDT": "500000",
+      "BTCB": "5",
+      "AMT": "100000"
+    }
+  ],
+  "liquidity": {
+    "USDT_BTCB": {
+      "USDT": "85581600",
+      "BTCB": "2484.679338"
+    },
+    "AMT_BTCB": {
+      "AMT": "7877440",
+      "BTCB": "85.22166426"
+    }
+  }
+}

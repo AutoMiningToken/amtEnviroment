@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import chai from "chai";
-import { Amt } from "../typechain-types";
+import { Amt } from "../../typechain-types";
 const { expect } = chai;
 
 describe("Amt", function () {

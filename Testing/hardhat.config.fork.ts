@@ -10,25 +10,26 @@ const config: HardhatUserConfig = {
       { version: "0.5.16" },
       { version: "0.4.18" },
     ],
+
+    settings: { optimizer: { enabled: true, runs: 1000 } },
     overrides: {
-      "contracts/IUniswapV2Router01.sol": {
-        version: "0.6.2",
-        settings: {},
+      "@uniswap/lib/contracts/libraries/FixedPoint.sol": {
+        version: "0.5.0",
+        settings: { optimizer: { enabled: true, runs: 1000 } },
       },
-      "contracts/Pancake-exchange-contracts/contracts/libraries/SafeMath.sol": {
-        version: "0.6.6",
-        settings: {},
+      "@uniswap/lib/contracts/libraries/FullMath.sol": {
+        version: "0.5.0",
+        settings: { optimizer: { enabled: true, runs: 1000 } },
       },
-      "contracts/Pancake-exchange-contracts/contracts/libraries/PancakeLibrary.sol":
-        {
-          version: "0.6.6",
-          settings: {},
-        },
+      "@uniswap/lib/contracts/libraries/BitMath.sol": {
+        version: "0.5.0",
+        settings: { optimizer: { enabled: true, runs: 1000 } },
+      },
     },
-
-    settings: { optimizer: { enabled: true, runs: 2000 } },
   },
-
+  paths: {
+    tests: "./testForked",
+  },
   networks: {
     hardhat: {
       gas: "auto",
@@ -36,9 +37,8 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
 
       forking: {
-        url: "https://bsc.publicnode.com",
+        url: "https://bsc-dataseed1.binance.org/",
       },
-      chainId: 56,
 
       accounts: {
         accountsBalance: "9000000000000000000000000000000",

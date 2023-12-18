@@ -29,7 +29,9 @@ describe("Intensive dust collection", function () {
 
     const Btcb = await ethers.getContractFactory("TestERC20");
     btcb = (await Btcb.deploy(
-      ethers.utils.parseEther("21000000")
+      ethers.utils.parseEther("21000000"),
+      "Bitcoin",
+      "BTCB"
     )) as TestERC20;
     await btcb.deployed();
 
@@ -87,7 +89,7 @@ describe("Intensive dust collection", function () {
     return scalingFactor;
   }
   it("Intensive dust collection", async function () {
-    this.timeout(2000000)
+    this.timeout(2000000);
     const wallets = await ethers.getSigners();
     const owner = wallets[0];
     const payerWallet = wallets[1];
@@ -107,28 +109,28 @@ describe("Intensive dust collection", function () {
       await btcb.transfer(payerWallet.address, toPay);
       await master.connect(payerWallet).payRent(toPay, 0);
 
-      
       //Charge of payment
-      await master.charge(i+1)
+      await master.charge(i + 1);
       for (let j = 2; j < amountOfWalletsTouse; j++) {
-        await master.connect(wallets[j]).charge(i+1);
+        await master.connect(wallets[j]).charge(i + 1);
 
         //Return of amt for new distribution
-        await amt.connect(wallets[j]).transfer(owner.address,await amt.balanceOf(wallets[j].address))
+        await amt
+          .connect(wallets[j])
+          .transfer(owner.address, await amt.balanceOf(wallets[j].address));
       }
-      console.log("Potential dust on " + i + " " + await btcb.balanceOf(master.address))
+      console.log(
+        "Potential dust on " + i + " " + (await btcb.balanceOf(master.address))
+      );
     }
 
     //After all distribution and payments will begin dust collection
-    for(let i = 0; i<amountOfRepetitions;i++){
-      try{
-        await master.handleDust(i+1)
-      }
-      catch{
-        
-      }
+    for (let i = 0; i < amountOfRepetitions; i++) {
+      try {
+        await master.handleDust(i + 1);
+      } catch {}
     }
     //Final check if all dust were collected
-    expect(await btcb.balanceOf(master.address)).to.be.equal(0)
+    expect(await btcb.balanceOf(master.address)).to.be.equal(0);
   });
 });

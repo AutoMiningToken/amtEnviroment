@@ -1,0 +1,36 @@
+diff -urN Testing/contracts/Pancake-exchange-contracts/contracts/libraries/PancakeLibrary.sol Production/contracts/Pancake-exchange-contracts/contracts/libraries/PancakeLibrary.sol
+--- Testing/contracts/Pancake-exchange-contracts/contracts/libraries/PancakeLibrary.sol	2023-12-18 17:51:31.877296100 -0300
++++ Production/contracts/Pancake-exchange-contracts/contracts/libraries/PancakeLibrary.sol	2023-12-18 17:48:25.066499200 -0300
+@@ -28,15 +28,13 @@
+     ) internal pure returns (address pair) {
+         (address token0, address token1) = sortTokens(tokenA, tokenB);
+         pair = address(
+-            uint160(
+-                uint(
+-                    keccak256(
+-                        abi.encodePacked(
+-                            hex"ff",
+-                            factory,
+-                            keccak256(abi.encodePacked(token0, token1)),
+-                            hex"336112dac6bce50aeca408bfc6cea35e2f83c34e01aaadd4d159ab20a09bc0ad" // init code hash
+-                        )
++            uint256(
++                keccak256(
++                    abi.encodePacked(
++                        hex"ff",
++                        factory,
++                        keccak256(abi.encodePacked(token0, token1)),
++                        hex"a5934690703a592a07e841ca29d5e5c79b5e22ed4749057bb216dc31100be1c0" // init code hash
+                     )
+                 )
+             )
+diff -urN Testing/contracts/Pancake-exchange-contracts/contracts/libraries/SafeMath.sol Production/contracts/Pancake-exchange-contracts/contracts/libraries/SafeMath.sol
+--- Testing/contracts/Pancake-exchange-contracts/contracts/libraries/SafeMath.sol	2023-12-17 17:29:24.145618100 -0300
++++ Production/contracts/Pancake-exchange-contracts/contracts/libraries/SafeMath.sol	2023-10-05 19:24:03.876374800 -0300
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-3.0
+-pragma solidity >=0.5.0;
++pragma solidity >=0.5.0 <0.7.0;
+ 
+ // a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
+ 

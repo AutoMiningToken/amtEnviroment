@@ -6,6 +6,10 @@
     "solc": "^0.8.9"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.2"
+    "@chainlink/contracts": "^0.8.0",
+    "@openzeppelin/contracts": "^4.9.2",
+    "@uniswap/lib": "^4.0.1-alpha",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0"
   }
 }
