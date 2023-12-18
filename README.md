@@ -27,3 +27,20 @@ The project is structured into two main directories: `Production` and `Testing`.
 cd Production
 npm install
 ```
+
+2. Apply the `fixedPoint.patch` to ensure compatibility and proper functionality:
+
+```
+patch -p1 < ../fixedPoint.patch
+```
+
+3. Repeat the installation process for the Testing environment:
+
+```bash
+cd Production
+npm install
+```
+
+```
+patch -p1 < ../fixedPoint.patch
+```
