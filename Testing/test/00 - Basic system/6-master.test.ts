@@ -307,16 +307,16 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder1.address, 1000);
     await btcb.transfer(tokenHolder2.address, 1000);
 
-    amt
+    await amt
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    amt
+    await amt
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -459,16 +459,16 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder1.address, 1000);
     await btcb.transfer(tokenHolder2.address, 1000);
 
-    amt
+    await amt
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    amt
+    await amt
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -548,16 +548,16 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder1.address, 1000);
     await btcb.transfer(tokenHolder2.address, 1000);
 
-    amt
+    await amt
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    amt
+    await amt
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -608,16 +608,16 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder1.address, 1000);
     await btcb.transfer(tokenHolder2.address, 1000);
 
-    amt
+    await amt
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    amt
+    await amt
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -673,16 +673,16 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder1.address, 1000);
     await btcb.transfer(tokenHolder2.address, 1000);
 
-    amt
+    await amt
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    amt
+    await amt
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -749,16 +749,16 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder1.address, 1000);
     await btcb.transfer(tokenHolder2.address, 2000);
 
-    amt
+    await amt
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    amt
+    await amt
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -832,16 +832,16 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder1.address, 1000);
     await btcb.transfer(tokenHolder2.address, 2000);
 
-    amt
+    await amt
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    amt
+    await amt
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -907,16 +907,16 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder1.address, 1000);
     await btcb.transfer(tokenHolder2.address, 2000);
 
-    amt
+    await amt
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder1)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    amt
+    await amt
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder2)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -961,10 +961,10 @@ describe("Master", function () {
     await master.mintMaster(tokenHolder3.address, 20000);
     await btcb.transfer(tokenHolder3.address, 2000);
 
-    amt
+    await amt
       .connect(tokenHolder3)
       .approve(master.address, ethers.utils.parseEther("1000000"));
-    btcb
+    await btcb
       .connect(tokenHolder3)
       .approve(master.address, ethers.utils.parseEther("1000000"));
 
@@ -1010,11 +1010,17 @@ describe("Master", function () {
 
   it("UNIT: Owner must be able to add liquidity locking", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+      await master.addLiquidityLocking(
+        100,
+        10,
+        owner.address,
+        60,
+        master.address
+      )
     )
       .to.changeTokenBalance(amt, owner.address, -100)
       .and.to.changeTokenBalance(btcb, owner.address, -10)
@@ -1023,8 +1029,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to add liquidity locking twice", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
@@ -1038,8 +1044,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to add liquidity without enough amt", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await amt.transfer(payerWallet.address, amt.balanceOf(owner.address));
     await expect(
       master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
@@ -1048,8 +1054,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to add liquidity without enough btcb", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await btcb.transfer(payerWallet.address, btcb.balanceOf(owner.address));
     await expect(
@@ -1059,8 +1065,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to add liquidity with an amount of amt lesser than 2", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(1, 10, owner.address, 60, master.address)
@@ -1069,8 +1075,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to add liquidity with an amount of btcb lesser than 2", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 1, owner.address, 60, master.address)
@@ -1079,8 +1085,8 @@ describe("Master", function () {
 
   it("UNIT: Liq locker must not be seted with zero address as beneficiary", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 10, zeroAddress, 60, master.address)
@@ -1089,8 +1095,8 @@ describe("Master", function () {
 
   it("UNIT: Liq locker must not be seted with zero address as master", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 10, owner.address, 60, zeroAddress)
@@ -1099,8 +1105,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must be able to charge from liquidity locked", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
@@ -1128,8 +1134,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must be able to release tokens after timelapse", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
@@ -1149,8 +1155,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to release tokens before timelapse", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
@@ -1168,8 +1174,8 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to release tokens before timelapse if there are no tokens to release", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    amt.approve(master.address, 1000);
-    btcb.approve(master.address, 1000);
+    await amt.approve(master.address, 1000);
+    await btcb.approve(master.address, 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
@@ -1267,18 +1273,18 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder2.address, 100);
     await btcb.transfer(tokenHolder3.address, 100);
 
-    amt.connect(tokenHolder1).approve(master.address, 10000);
-    btcb.connect(tokenHolder1).approve(master.address, 100);
+    await amt.connect(tokenHolder1).approve(master.address, 10000);
+    await btcb.connect(tokenHolder1).approve(master.address, 100);
 
-    amt.connect(tokenHolder2).approve(master.address, 10000);
-    btcb.connect(tokenHolder2).approve(master.address, 100);
+    await amt.connect(tokenHolder2).approve(master.address, 10000);
+    await btcb.connect(tokenHolder2).approve(master.address, 100);
 
-    amt.connect(tokenHolder3).approve(master.address, 10000);
-    btcb.connect(tokenHolder3).approve(master.address, 100);
+    await amt.connect(tokenHolder3).approve(master.address, 10000);
+    await btcb.connect(tokenHolder3).approve(master.address, 100);
 
-    master.connect(tokenHolder1).addLiquidity(10000, 100);
-    master.connect(tokenHolder2).addLiquidity(10000, 100);
-    master.connect(tokenHolder3).addLiquidity(10000, 100);
+    await master.connect(tokenHolder1).addLiquidity(10000, 100);
+    await master.connect(tokenHolder2).addLiquidity(10000, 100);
+    await master.connect(tokenHolder3).addLiquidity(10000, 100);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
     ).to.changeTokenBalance(btcb, master.address, 1000);
@@ -1323,18 +1329,18 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder2.address, 100);
     await btcb.transfer(tokenHolder3.address, 100);
 
-    amt.connect(tokenHolder1).approve(master.address, 10000);
-    btcb.connect(tokenHolder1).approve(master.address, 100);
+    await amt.connect(tokenHolder1).approve(master.address, 10000);
+    await btcb.connect(tokenHolder1).approve(master.address, 100);
 
-    amt.connect(tokenHolder2).approve(master.address, 10000);
-    btcb.connect(tokenHolder2).approve(master.address, 100);
+    await amt.connect(tokenHolder2).approve(master.address, 10000);
+    await btcb.connect(tokenHolder2).approve(master.address, 100);
 
-    amt.connect(tokenHolder3).approve(master.address, 10000);
-    btcb.connect(tokenHolder3).approve(master.address, 100);
+    await amt.connect(tokenHolder3).approve(master.address, 10000);
+    await btcb.connect(tokenHolder3).approve(master.address, 100);
 
-    master.connect(tokenHolder1).addLiquidity(10000, 100);
-    master.connect(tokenHolder2).addLiquidity(10000, 100);
-    master.connect(tokenHolder3).addLiquidity(10000, 100);
+    await master.connect(tokenHolder1).addLiquidity(10000, 100);
+    await master.connect(tokenHolder2).addLiquidity(10000, 100);
+    await master.connect(tokenHolder3).addLiquidity(10000, 100);
     await expect(
       master.connect(payerWallet).payRent(999, 0)
     ).to.changeTokenBalance(btcb, master.address, 999);

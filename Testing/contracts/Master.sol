@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 //Timelock import
 import "@openzeppelin/contracts/token/ERC20/utils/TokenTimelock.sol";
+import "hardhat/console.sol";
 
 /**
  * @title liqLocker
@@ -454,7 +455,6 @@ contract Master is Ownable {
         require(btcb.balanceOf(msg.sender) >= amountBtcb, "Not enough BBTC");
         require(amountAmt > 1, "AMT amount is too small");
         require(amountBtcb > 1, "BTCB amount is too small");
-
         amt.safeTransferFrom(msg.sender, address(this), amountAmt);
         btcb.safeTransferFrom(msg.sender, address(this), amountBtcb);
 
