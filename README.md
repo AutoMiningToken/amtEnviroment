@@ -5,6 +5,7 @@ Welcome to the Auto Mining Token repository. This project focuses on integrating
 ## Loan Protocol
 
 The Loan Protocol is a groundbreaking addition to the AMT ecosystem, allowing AMT holders to use their tokens as collateral to receive USDT at a predetermined rate. This feature aims to enhance the functionality and utility of AMT, providing holders with more flexibility and options for their assets.
+For an in-depth explanation of the Loan Protocol, including API details and examples, see [Loan Protocol Documentation](LOAN_PROTOCOL.md).
 
 ## Project Overview
 
@@ -66,3 +67,7 @@ npm run test:coverage
 ```bash
 npm run test:fork
 ```
+
+## Contact
+
+If you have any questions or need further clarification, please contact us at developer@autominingtoken.com
