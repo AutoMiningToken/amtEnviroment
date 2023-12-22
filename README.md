@@ -65,7 +65,7 @@ In the Testing environment, we have custom npm commands tailored to various test
 2. **Coverage Testing:**
 
    - Command: `npm run test:coverage`
-   - Description: Runs tests while measuring the code coverage. This ensures that the tests adequately cover the smart contract code and that different aspects of the AMT contract are thoroughly tested under various scenarios.
+   - Description: Runs tests while measuring the code coverage. This ensures that the tests adequately cover the smart contract code and that different aspects of the AMT contract are thoroughly tested under various scenarios. Executes the npx hardhat coverage.
 
    ```bash
    npm run test:coverage
