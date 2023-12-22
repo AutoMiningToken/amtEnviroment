@@ -9,6 +9,7 @@ The Loan Protocol is a key feature of the Auto Mining Token (AMT) ecosystem. It 
 - **Contract Name**: `LoanProtocol`
 - **Primary Function**: Enabling users to borrow USDT against their AMT tokens.
 - **Network**: Binance Smart Chain (BSC)
+- **Price feeder**: This contract use a custom price feeder to determinate the valuation of the amount of AMT to be used on a loan and the liquidation condition, for specific documentation about the price feeder see [Price Feeder Documentation](PRICE_FEEDER.md).
 
 ## Key Features
 
@@ -96,50 +97,50 @@ Determines if a specific loan is eligible for liquidation based on current crite
 
 ## Usage Examples
 
-1. Loan creation and loan fetching for an user (test example)
+### Example: Loan Creation
 
-```typescript
-const wallets = await ethers.getSigners();
-const [owner, user] = wallets;
-await amt.transfer(user.address, ethers.utils.parseEther("2000"));
-await amt
-  .connect(user)
-  .approve(loanProtocol.address, ethers.utils.parseEther("2000"));
+```solidity
+// Example: Creating a loan
+LoanProtocol loanProtocol = LoanProtocol(loanProtocolAddress);
+uint256 amtAmount = 1000; // AMT tokens to lock as collateral
+loanProtocol.createLoan(amtAmount);
+```
 
-const loansToCreate = ["100", "30", "900"];
-const expectedLoans = [];
+### Example: Interacting with the Loan Protocol
 
-//Send USDT to the loan protocol
-await usdt.transfer(loanProtocol.address, ethers.utils.parseEther("1500000"));
-for (let amtAmount of loansToCreate) {
-  const priceFromPriceFeeder = await priceFeeder.getPrice(
-    ethers.utils.parseEther(amtAmount)
-  );
-  const rate = await loanProtocol.loanRatio();
-  const expectedLoan = {
-    amountBorrowed: priceFromPriceFeeder.div(rate),
-    collateralLocked: ethers.utils.parseEther(amtAmount),
-    loanPrice: await priceFeeder.getPrice(ethers.utils.parseEther(amtAmount)),
-    loanRatio: await loanProtocol.loanRatio(),
-  };
-  await loanProtocol
-    .connect(user)
-    .createLoan(ethers.utils.parseEther(amtAmount));
-  expectedLoans.push(expectedLoan);
-}
+```solidity
+// Another contract interacting with LoanProtocol
+contract InteractingContract {
+    LoanProtocol loanProtocol;
 
-const userLoans = await loanProtocol.getUserLoans(user.address);
+    constructor(address _loanProtocolAddress) {
+        loanProtocol = LoanProtocol(_loanProtocolAddress);
+    }
 
-for (let i = 0; i < userLoans.length; i++) {
-  expect(userLoans[i].amountBorrowed).to.equal(expectedLoans[i].amountBorrowed);
-  expect(userLoans[i].collateralLocked).to.equal(
-    expectedLoans[i].collateralLocked
-  );
-  expect(userLoans[i].loanPrice).to.equal(expectedLoans[i].loanPrice);
-  expect(userLoans[i].loanRatio).to.equal(expectedLoans[i].loanRatio);
+    function interactCreateLoan(uint256 amtAmount) public {
+        loanProtocol.createLoan(amtAmount);
+    }
+
+    function interactCloseLoan(uint256 loanIndex, uint256 amount) public {
+        loanProtocol.closeLoan(loanIndex, amount);
+    }
 }
 ```
 
-## Troubleshooting
+### Example: Closing a Loan
 
-(Include common issues and their resolutions related to interacting with the Loan Protocol contract.)
+```typescript
+// TypeScript example for closing a loan
+const loanIndex = 0; // Index of the loan to close
+const amountToRepay = ethers.utils.parseEther("500"); // USDT amount to repay
+await loanProtocol.connect(user).closeLoan(loanIndex, amountToRepay);
+```
+
+### Example: Loan Closure in Solidity
+
+```solidity
+// Solidity example of a user closing their loan
+function closeMyLoan(uint256 loanIndex, uint256 amountToRepay) public {
+    loanProtocol.closeLoan(loanIndex, amountToRepay);
+}
+```

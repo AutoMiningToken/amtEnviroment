@@ -9,7 +9,10 @@ Auto Mining Token is a smart contract project that automatically distributes a s
 ## Loan Protocol
 
 The Loan Protocol is a groundbreaking addition to the AMT ecosystem, allowing AMT holders to use their tokens as collateral to receive USDT at a predetermined rate. This feature aims to enhance the functionality and utility of AMT, providing holders with more flexibility and options for their assets.
+
 For an in-depth explanation of the Loan Protocol, including API details and examples, see [Loan Protocol Documentation](LOAN_PROTOCOL.md).
+
+For an in-depth explanation of the Price Feeder used in the Loan Protocol, see [Price Feeder Documentation](PRICE_FEEDER.md).
 
 ## Installation
 
