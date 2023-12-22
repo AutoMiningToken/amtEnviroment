@@ -30,7 +30,7 @@ contract Oracle is Ownable {
     /// @param tokenA The address of the first token of the pair
     /// @param tokenB The address of the second token of the pair
     /// @dev The contract uses PancakeLibrary for finding the pair address
-    constructor(address factory, address tokenA, address tokenB) public {
+    constructor(address factory, address tokenA, address tokenB) {
         IUniswapV2Pair _pair = IUniswapV2Pair(
             PancakeLibrary.pairFor(factory, tokenA, tokenB)
         );
