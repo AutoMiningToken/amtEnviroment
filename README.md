@@ -14,6 +14,8 @@ For an in-depth explanation of the Loan Protocol, including API details and exam
 
 For an in-depth explanation of the Price Feeder used in the Loan Protocol, see [Price Feeder Documentation](PRICE_FEEDER.md).
 
+For an in-depth explanation of the small modifications to FixedFloat.sol library and pancake contracts for testing purposes, see [MODIFICATIONS.md](MODIFICATIONS.md).
+
 ## Installation
 
 The project is structured into two main directories: `Production` and `Testing`. Each directory is a self-contained Hardhat project and requires separate setup.
