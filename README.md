@@ -37,18 +37,20 @@ npm install
 2. Apply the `fixedPoint.patch` to ensure compatibility and proper functionality:
 
 ```bash
-patch -p1 < ../fixedPoint.patch
+cd node_modules/@uniswap/lib/contracts/libraries
+patch <  ../../../../../../patches/fixedPoint.patch
 ```
 
 3. Repeat the installation process for the Testing environment:
 
 ```bash
-cd Production
+cd Testing
 npm install
 ```
 
 ```bash
-patch -p1 < ../fixedPoint.patch
+cd node_modules/@uniswap/lib/contracts/libraries
+patch <  ../../../../../../patches/fixedPoint.patch
 ```
 
 ## Usage
