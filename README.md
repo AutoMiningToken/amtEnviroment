@@ -158,6 +158,10 @@ It's possible that your tests might fail with errors like "call to non-contract 
 - Ensure that you replace `[NEW_HASH]` with the actual hash string you obtained.
 - This process is critical for accurately setting up the testing environment and ensuring that the `pairFor` function in your contract operates correctly with the updated initialization hash.
 
+### Issue: ProviderError: missing trie node
+
+As the tests uses a fork of the BSC mainnet to be as closer as posible to the real enviroment sometimes when running the complete test set this error happens in the Loan Protocol test executed at the end. To solve it exclude the basic testing moving the folder `00 - Basic system` to the folder `_test/` and execute the test again. The test must pass without any other troubles.
+
 ## Contact
 
 If you have any questions or need further clarification, please contact us at developer@autominingtoken.com
