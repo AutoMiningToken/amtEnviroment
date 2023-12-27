@@ -53,9 +53,43 @@ cd node_modules/@uniswap/lib/contracts/libraries
 patch <  ../../../../../../patches/fixedPoint.patch
 ```
 
+#### Manual File Replacement (Alternative Method to apply patch)
+
+1. Locate the Modified File:
+
+   1. Navigate to the `patches/Modified/` directory in your project.
+   2. Find the `fixedPoint.sol` file, which contains the necessary modifications.
+
+2. Replace the File in Production::
+
+   1. Go to the Production project's `node_modules/@uniswap/lib/contracts/libraries` directory.
+   2. Replace the existing `FixedPoint.sol` file with the one you found in `patches/Modified/`. You can do this by copying and pasting the modified file into this directory, overwriting the original file.
+
+3. Replace the File in Testing:
+   1. Similarly, in the Testing project, navigate to `node_modules/@uniswap/lib/contracts/libraries`.
+   2. Replace the `FixedPoint.sol` file here with the modified version from `patches/Modified/`.
+
+**Important Notes:**
+
+1. Ensure that you replace the FixedPoint.sol file in the correct directory for both Production and Testing environments.
+2. This manual process should only be used if the patch application fails or if you are unable to use the patch command.
+3. After replacing the file, verify that the changes are correctly implemented by reviewing the FixedPoint.sol file in each environment.
+
 ## Usage
 
-In the Testing environment, we have custom npm commands tailored to various testing scenarios. These commands facilitate the process of altering the testing setup without manually modifying the `pairFor` function each time. The modification of the initialization hash in the `pairFor` function of the PancakeLibrary is necessary for the tests to run correctly. This approach ensures ease and efficiency in testing the AMT smart contract under different scenarios, making it a crucial part of our testing strategy. Here are the commands and their uses:
+Execute compile before executing the tests
+
+```bash
+npx hardhat compile
+```
+
+In the Testing environment, we have custom npm commands tailored to various testing scenarios. These commands facilitate the process of altering the testing setup without manually modifying the `pairFor` function each time. The modification of the initialization hash in the `pairFor` function of the PancakeLibrary is necessary for the tests to run correctly. This approach ensures ease and efficiency in testing the AMT smart contract under different scenarios, making it a crucial part of our testing strategy.
+
+This testing enviroment contain tests for the complete AMT system coverage. It takes a lot of time to complete execution. In case you only want to test the loan protocol please go to the `test/` and move `00 - Basic system` to the folder `_test/` to avoid over execution when not neeeded.
+
+Remember, encountering issues during the initial setup or execution of commands is not uncommon, and the **Troubleshooting** section is here to assist you in overcoming these hurdles.
+
+Here are the commands and their uses:
 
 1. **Local Testing:**
 
