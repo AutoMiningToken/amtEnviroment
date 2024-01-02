@@ -34,12 +34,6 @@ const config: HardhatUserConfig = {
       gas: "auto",
       blockGasLimit: 9000000000000000,
       allowUnlimitedContractSize: true,
-
-      forking: {
-        url: "https://bsc.publicnode.com",
-      },
-      chainId: 56,
-
       accounts: {
         accountsBalance: "9000000000000000000000000000000",
         count: 300,

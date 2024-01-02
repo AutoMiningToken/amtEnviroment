@@ -38,7 +38,19 @@ describe("Test of loan protocol", function () {
   let oracleAMTBTCB: Oracle;
   let oracleUSDTBTCB: Oracle;
   let loanProtocol: LoanProtocol;
+  const BSC_URL = "https://bsc.publicnode.com";
   this.beforeEach(async function () {
+    const bscProvider = new ethers.providers.JsonRpcProvider(BSC_URL);
+    const latestBlock = (await bscProvider.getBlockNumber()) - 100;
+
+    await network.provider.send("hardhat_reset", [
+      {
+        forking: {
+          jsonRpcUrl: BSC_URL,
+          blockNumber: latestBlock,
+        },
+      },
+    ]);
     ({ usdt, btcb } = await deployExternalToken());
     ({ factory, router, wbnb } = await deployPancake(usdt, btcb));
 

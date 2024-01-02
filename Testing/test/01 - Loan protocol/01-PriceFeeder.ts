@@ -25,6 +25,10 @@ const mainDeploy = require("../../scripts/deployMainAmtContracts");
 const setInitialState = require("../../scripts/setInitialState");
 const deployOracles = require("../../scripts/deployOracles");
 describe("Tests of price feeder contract", function () {
+  //This values need to be updated to work
+  const btcbPrice = 45000;
+  const amtPrice = "0.48";
+
   let priceFeeder: PriceFeeder;
   let factory: PancakeFactory;
   let router: PancakeRouter;
@@ -38,7 +42,20 @@ describe("Tests of price feeder contract", function () {
   let oracleAMTBTCB: Oracle;
   let oracleUSDTBTCB: Oracle;
   let loanProtocol: LoanProtocol;
+  const BSC_URL = "https://bsc.publicnode.com";
   this.beforeEach(async function () {
+    const bscProvider = new ethers.providers.JsonRpcProvider(BSC_URL);
+    const latestBlock = (await bscProvider.getBlockNumber()) - 100;
+
+    await network.provider.send("hardhat_reset", [
+      {
+        forking: {
+          jsonRpcUrl: BSC_URL,
+          blockNumber: latestBlock,
+        },
+      },
+    ]);
+
     ({ usdt, btcb } = await deployExternalToken());
     ({ factory, router, wbnb } = await deployPancake(usdt, btcb));
 
@@ -133,7 +150,6 @@ describe("Tests of price feeder contract", function () {
 
   it("UNIT: Get latest BTCB price must return a correct value", async function () {
     //Actual BTCB price (Need to be updated to work)
-    const btcbPrice = 43000;
 
     expect(await priceFeeder.getLatestBTCBPrice()).to.be.closeTo(
       btcbPrice,
@@ -143,7 +159,7 @@ describe("Tests of price feeder contract", function () {
 
   it("UNIT: Price Feeder must return the correct value in usdt quoting amt", async function () {
     //Actual AMT price (Need to be updated to work)
-    const amtPrice = "0.471";
+
     expect(
       await priceFeeder.getPrice(ethers.utils.parseEther("1"))
     ).to.be.closeTo(
@@ -156,7 +172,6 @@ describe("Tests of price feeder contract", function () {
     const wallets = await ethers.getSigners();
     const owner = wallets[0];
     //Actual AMT price (Need to be updated to work)
-    const amtPrice = "0.471";
     await btcb.approve(router.address, ethers.utils.parseEther("100"));
     await router.swapExactTokensForTokens(
       ethers.utils.parseEther("100"),
@@ -177,9 +192,6 @@ describe("Tests of price feeder contract", function () {
   it("UNIT: Price Feeder must return the price (using quote as upper limit) in case of a big sell event", async function () {
     const wallets = await ethers.getSigners();
     const owner = wallets[0];
-
-    //Actual AMT price (Need to be updated to work)
-    const amtPrice = "0.453";
     const priceTarget = "0.2";
     await movePriceToTarget(priceTarget);
 

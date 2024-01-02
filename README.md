@@ -34,7 +34,7 @@ cd Production
 npm install
 ```
 
-2. Apply the `fixedPoint.patch` to ensure compatibility and proper functionality:
+2. Apply the `fixedPoint.patch` to ensure compatibility and proper functionality inside `Production`:
 
 ```bash
 cd node_modules/@uniswap/lib/contracts/libraries
@@ -47,6 +47,8 @@ patch <  ../../../../../../patches/fixedPoint.patch
 cd Testing
 npm install
 ```
+
+4. Apply the `fixedPoint.patch` to ensure compatibility and proper functionality inside `Testing`:
 
 ```bash
 cd node_modules/@uniswap/lib/contracts/libraries
@@ -88,6 +90,25 @@ In the Testing environment, we have custom npm commands tailored to various test
 This testing enviroment contain tests for the complete AMT system coverage. It takes a lot of time to complete execution. In case you only want to test the loan protocol please go to the `test/` and move `00 - Basic system` to the folder `_test/` to avoid over execution when not neeeded.
 
 Remember, encountering issues during the initial setup or execution of commands is not uncommon, and the **Troubleshooting** section is here to assist you in overcoming these hurdles.
+
+## Loan protocol and related contracts testing
+
+The test for the loan protocol contract and the price feeder contract use the forked functionality of hardhat to achieve the close scenario as the real as posible. So this tests may be slower than the rest.
+
+For the testing of the priceFeeder contract it is required to change the values of BTCB price and AMT in the test code. For doing this you need to open the file `Testing/test/01 - Loan protocol/01-PriceFeeder.ts` and change the price defined as constant in 29 and 30
+
+```typescript
+  //This values need to be updated to work
+  const btcbPrice = [ACTUAL BTCB PRICE];
+  const amtPrice = [ACTUAL AMT PRICE];
+```
+
+It's not required to put the exact price as the test has a margin to pass. You can find the respective prices easly on:
+
+1. [BTCB PRICE](https://coinmarketcap.com/currencies/bitcoin/).
+2. [AMT PRICE](https://coinmarketcap.com/dexscan/bsc/0x66cd75f1938e4f287f70f49b295207e9363f6a68/).
+
+## Custom test commands
 
 Here are the commands and their uses:
 
@@ -160,7 +181,7 @@ It's possible that your tests might fail with errors like "call to non-contract 
 
 ### Issue: ProviderError: missing trie node
 
-As the tests uses a fork of the BSC mainnet to be as closer as posible to the real enviroment sometimes when running the complete test set this error happens in the Loan Protocol test executed at the end. To solve it exclude the basic testing moving the folder `00 - Basic system` to the folder `_test/` and execute the test again. The test must pass without any other troubles.
+As the tests uses a fork of the BSC mainnet to be as closer as posible to the real enviroment sometimes when running the complete test set this error happens in the Loan Protocol test executed at the end. To solve it exclude the basic testing moving the folder `00 - Basic system` inside the `/test` folder to the folder `_test/` and execute the test again. The test must pass without any other troubles.
 
 ## Contact
 
