@@ -93,9 +93,13 @@ Remember, encountering issues during the initial setup or execution of commands 
 
 ## Loan protocol and related contracts testing
 
-The test for the loan protocol contract and the price feeder contract use the forked functionality of hardhat to achieve the close scenario as the real as posible. So this tests may be slower than the rest.
+We leverage Hardhat's forking functionality to create testing environments that closely mimic real-world scenarios. As a result, these tests may take longer to execute compared to others.
 
-For the testing of the priceFeeder contract it is required to change the values of BTCB price and AMT in the test code. For doing this you need to open the file `Testing/test/01 - Loan protocol/01-PriceFeeder.ts` and change the price defined as constant in 29 and 30
+To test the Price Feeder Contract effectively, it's essential to update the BTCB and AMT price values within the test code. Follow these steps to make the necessary changes:
+
+1. Locate the Test File: Navigate to the file Testing/test/01 - Loan protocol/01-PriceFeeder.ts.
+
+2. Update Price Values: Modify the price constants in lines 29 and 30 to reflect the current prices. The constants are structured as follows:
 
 ```typescript
   //This values need to be updated to work
@@ -103,7 +107,9 @@ For the testing of the priceFeeder contract it is required to change the values 
   const amtPrice = [ACTUAL AMT PRICE];
 ```
 
-It's not required to put the exact price as the test has a margin to pass. You can find the respective prices easly on:
+Note: Exact price precision is not mandatory, as the test includes a tolerance margin for price variations.
+
+Finding Current Prices: You can easily obtain the latest prices for BTCB and AMT from the following sources:
 
 1. [BTCB PRICE](https://coinmarketcap.com/currencies/bitcoin/).
 2. [AMT PRICE](https://coinmarketcap.com/dexscan/bsc/0x66cd75f1938e4f287f70f49b295207e9363f6a68/).
