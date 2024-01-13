@@ -18,6 +18,7 @@ import { BigNumber } from "ethers";
 import { BigNumber as nativeBigNumber } from "bignumber.js";
 import fs from "fs";
 import { Oracle } from "../../typechain-types";
+import contractAddresses from "../../Addresses/contractAddresses";
 const { expect } = chai;
 const deployPancake = require("../../scripts/deployPancakeSwapV2");
 const deployExternalToken = require("../../scripts/deployExternalTokens");
@@ -26,8 +27,8 @@ const setInitialState = require("../../scripts/setInitialState");
 const deployOracles = require("../../scripts/deployOracles");
 describe("Tests of price feeder contract", function () {
   //This values need to be updated to work
-  const btcbPrice = 45000;
-  const amtPrice = "0.48";
+  const btcbPrice = 42000;
+  const amtPrice = "0.46";
 
   let priceFeeder: PriceFeeder;
   let factory: PancakeFactory;
@@ -171,7 +172,7 @@ describe("Tests of price feeder contract", function () {
   it("UNIT: Price Feeder must return the price (using the oracle as upper limit) in case of a big buy event", async function () {
     const wallets = await ethers.getSigners();
     const owner = wallets[0];
-    //Actual AMT price (Need to be updated to work)
+
     await btcb.approve(router.address, ethers.utils.parseEther("100"));
     await router.swapExactTokensForTokens(
       ethers.utils.parseEther("100"),
@@ -258,5 +259,23 @@ describe("Tests of price feeder contract", function () {
         addressZero
       )
     ).to.revertedWith("Pair AMTBTCB must not be the zero address");
+  });
+
+  it("UNIT: Price Feeder must work with extreme (big) amount operations", async function () {
+    const wallets = await ethers.getSigners();
+    const owner = wallets[0];
+    const btcbPrice = await priceFeeder.getLatestBTCBPrice();
+    const pairAddress = await factory.getPair(amt.address, btcb.address);
+    const amtPoolBalance = await amt.balanceOf(pairAddress);
+    const btcbPoolBalance = await btcb.balanceOf(pairAddress);
+    console.log(amtPoolBalance.mul(10));
+    console.log(
+      "This data: " + (await priceFeeder.getPrice(amtPoolBalance.mul(10)))
+    );
+    console.log("BTCB pool balance x price: " + btcbPoolBalance.mul(btcbPrice));
+    expect(await priceFeeder.getPrice(amtPoolBalance.mul(10))).to.be.closeTo(
+      btcbPoolBalance.mul(btcbPrice),
+      btcbPoolBalance.mul(btcbPrice).div(99).mul(100) // 10% margin to total BTCB balance of pool
+    );
   });
 });

@@ -71,14 +71,35 @@ contract PriceFeeder is Ownable, IPriceFeeder {
         uint256 price_amt_btcb = oracleAMTBTCB.consult(amt, amountIn);
         IERC20 Amt = IERC20(amt);
         IERC20 Btcb = IERC20(btcb);
-        uint256 quotedBalance = (amountIn * Btcb.balanceOf(pairAMTBTCB)) /
-            Amt.balanceOf(pairAMTBTCB);
 
+        uint256 reserveAmt = Amt.balanceOf(pairAMTBTCB);
+        uint256 reserveBtcb = Btcb.balanceOf(pairAMTBTCB);
+
+        uint256 quotedBalance = getAmountOut(amountIn, reserveAmt, reserveBtcb);
         if (quotedBalance < price_amt_btcb) {
             price_amt_btcb = quotedBalance;
         }
         uint256 price_btcb_amt_usdt = getLatestBTCBPrice() * price_amt_btcb;
 
         return price_btcb_amt_usdt;
+    }
+
+    /// @dev copied from uniswap
+    function getAmountOut(
+        uint amountIn,
+        uint reserveA,
+        uint reserveB
+    ) private pure returns (uint amountOut) {
+        require(amountIn > 0, "Invalid amountIn");
+        require(reserveA > 0 && reserveB > 0, "Invalid reserves");
+
+        uint256 fee = 3; // Representing 0.3%
+        uint256 amountInWithFee = amountIn * (1000 - fee);
+        uint256 numerator = amountInWithFee * reserveB;
+        uint256 denominator = (reserveA * 1000) + amountInWithFee;
+
+        require(denominator != 0, "Division by zero");
+
+        amountOut = numerator / denominator;
     }
 }
