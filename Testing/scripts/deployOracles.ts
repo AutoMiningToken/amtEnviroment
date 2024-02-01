@@ -56,7 +56,9 @@ async function main(
     amt.address,
     master.address,
     priceFeeder.address,
-    2
+    2,
+    2,
+    3
   );
 
   await loanProtocol.deployed();

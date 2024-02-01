@@ -42,7 +42,9 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @notice Mapping of user's address to their array of loans.
     mapping(address => Loan[]) public userLoans;
 
-    uint256 public loanRatio; /// @notice The global 1/loan-to-value ratio used for creating new loans.
+    //uint256 public loanRatio; /// @notice The global 1/loan-to-value ratio used for creating new loans.
+    uint256 public loanRatioMin; /// @notice The global minimun 1/loan-to-value ratio used for creating new loans.
+    uint256 public loanRatioMax; /// @notice The global maximun 1/loan-to-value ratio used for creating new loans.
 
     /// Event emitted when a loan is created.
     event LoanCreated(
@@ -66,7 +68,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
 
     event PriceFeederChanged(address newPriceFeeder);
 
-    event LoanRatioChanged(uint256 newLoanRatio);
+    event LoanRatioChanged(uint256 newLoanRatioMin, uint256 newLoanRatioMax);
 
     // Modifier that allows only the pause admin to execute a function
     modifier onlyPauseAdmin() {
@@ -88,7 +90,9 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         address _amt,
         address _master,
         address _priceFeeder,
-        uint256 _loanRatio
+        uint256 _loanRatio,
+        uint256 _loanRatioMin,
+        uint256 _loanRatioMax
     ) {
         require(
             _btcb != address(0),
@@ -108,25 +112,42 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
             "Price feeder address must not be the zero address"
         );
         require(_loanRatio != 0, "Loan ratio must not be zero");
+        require(_loanRatioMin > 0, "Minumun loan ratio must not be zero");
+        require(
+            _loanRatioMax >= _loanRatioMin,
+            "Maximun loan ratio must be greater than minumun"
+        );
+        require(
+            _loanRatioMax < 100,
+            "Maximun loan ratio must be lesser than zero"
+        );
         usdt = IERC20(_usdt);
         btcb = IERC20(_btcb);
         master = Master(_master);
         amt = Amt(_amt);
         priceFeeder = IPriceFeeder(_priceFeeder);
-        loanRatio = _loanRatio;
+
+        loanRatioMin = _loanRatioMin;
+        loanRatioMax = _loanRatioMax;
         _pauseAdmin = msg.sender;
     }
 
     /// @notice Allows users to create a loan by locking their AMT tokens.
     /// @dev The loan amount is based on the current AMT token price and the loan ratio. The function transfers the locked AMT tokens to the contract and sends the loan amount in USDT to the user.
     /// @param amtAmount Amount of AMT tokens user wants to lock as collateral.
-    function createLoan(uint256 amtAmount) external whenNotPaused nonReentrant {
+    /// @param loanRatio Loan ratio for the new loan to create
+    function createLoan(
+        uint256 amtAmount,
+        uint256 loanRatio
+    ) external whenNotPaused nonReentrant {
         require(amtAmount > 0, "amtAmount must be greatter than zero");
+        require(loanRatio <= loanRatioMax, "");
+        require(loanRatio >= loanRatioMin, "");
         require(
             amt.balanceOf(msg.sender) >= amtAmount,
             "Not enought AMT balance"
         );
-        uint256 loanAmount = calculateLoanAmount(amtAmount);
+        uint256 loanAmount = calculateLoanAmount(amtAmount, loanRatio);
         require(loanAmount > 0, "Loan ammount too small");
         require(
             loanAmount <= usdt.balanceOf(address(this)),
@@ -211,11 +232,24 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Allows the owner to set a new loan ratio.
     /// @dev Only callable by the contract owner.
-    /// @param _loanRatio New 1/loan-to-value ratio for loans.
-    function setLoanRatio(uint256 _loanRatio) public onlyOwner {
-        require(_loanRatio > 0, "Loan ratio must be greatter than zero");
-        loanRatio = _loanRatio;
-        emit LoanRatioChanged(_loanRatio);
+    /// @param _loanRatioMin New minumiun 1/loan-to-value ratio for loans.
+    /// @param _loanRatioMax New maximun 1/loan-to-value ratio for loans.
+    function setLoanRatio(
+        uint256 _loanRatioMin,
+        uint256 _loanRatioMax
+    ) public onlyOwner {
+        require(_loanRatioMin > 0, "Minumun loan ratio must not be zero");
+        require(
+            _loanRatioMax >= _loanRatioMin,
+            "Maximun loan ratio must be greater than minumun"
+        );
+        require(
+            _loanRatioMax < 100,
+            "Maximun loan ratio must be lesser than zero"
+        );
+        loanRatioMax = _loanRatioMax;
+        loanRatioMin = _loanRatioMin;
+        emit LoanRatioChanged(_loanRatioMin, _loanRatioMax);
     }
 
     /// @notice Allows the owner to liquidate a user's loan.
@@ -331,9 +365,11 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @notice Calculates the potential loan amount for a given AMT token amount.
     /// @dev Uses the price feed to get the current price of AMT tokens.
     /// @param amtAmount Amount of AMT tokens user wants to lock as collateral.
+    /// @param loanRatio Loan ratio to calculate the loan amount
     /// @return Calculated loan amount in USDT.
     function calculateLoanAmount(
-        uint256 amtAmount
+        uint256 amtAmount,
+        uint256 loanRatio
     ) internal view returns (uint256) {
         uint256 amtPrice = priceFeeder.getPrice(amtAmount);
         return (amtPrice) / loanRatio;
