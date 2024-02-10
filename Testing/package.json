@@ -1,20 +1,24 @@
 {
   "name": "hardhat-project",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^1.0.1",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "hardhat": "^2.10.2"
   },
   "dependencies": {
-    "@chainlink/contracts": "^0.8.0",
+    "@chainlink/contracts": "^0.5.1",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.4",
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@openzeppelin/contracts": "^4.9.2",
     "@uniswap/lib": "^4.0.1-alpha",
     "@uniswap/v2-core": "^1.0.1",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
-    "all": "^0.0.0"
+    "all": "^0.0.0",
+    "bignumber.js": "^9.1.2",
+    "ethers": "^6.10.0"
   },
   "scripts": {
     "test:local": "node scripts/testSetUp/prepareTestEnviroment.js 3c96aa5190ff88a7216ba45b8da1bdb346ea9366dad9db8e2b3139d0eb777eb6 && npx hardhat test",
-    "test:coverage": "node scripts/testSetUp/prepareTestEnviroment.js 9596a9f344c9fce2bf39f6f955201fa5a3253f082b143b3b5126db5a60637f4d && npx hardhat coverage",
+    "test:coverage": "node scripts/testSetUp/prepareTestEnviroment.js 132b0f3383d6f84c36e3cc447f5c328c87a2edbee49a1fceab91ffa32ab22cc9 && npx hardhat coverage",
     "test:fork": "node scripts/testSetUp/prepareTestEnviroment.js 00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5 && npx hardhat test --config ./hardhat.config.fork.ts"
   }
 }

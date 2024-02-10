@@ -14,7 +14,6 @@ import {
 } from "../../typechain-types";
 import { Amt } from "../../typechain-types";
 import { BurnVault } from "../../typechain-types";
-import { BigNumber } from "ethers";
 import { BigNumber as nativeBigNumber } from "bignumber.js";
 import fs from "fs";
 import { Oracle } from "../../typechain-types";
@@ -74,25 +73,23 @@ describe("Tests of Oracle contract", function () {
     await network.provider.send("evm_mine");
   }
   function calculateAmtToSell(
-    amtReserves: BigNumber,
-    btcbReserves: BigNumber,
-    priceOfBTCBinUSDT: BigNumber,
-    targetPriceUSDT: BigNumber,
+    amtReserves: bigint,
+    btcbReserves: bigint,
+    priceOfBTCBinUSDT: bigint,
+    targetPriceUSDT: bigint,
     increase: Boolean
   ) {
     // BigNumber representation of 1 for scaling purposes
-    const oneEth = ethers.BigNumber.from("1000000000000000000"); // Equivalent to 1 ether to scale up decimals
+    const oneEth = BigInt("1000000000000000000"); // Equivalent to 1 ether to scale up decimals
 
-    const k = amtReserves.mul(btcbReserves);
+    const k = amtReserves * btcbReserves;
 
-    const wantedPriceOfAmtInBtcb = targetPriceUSDT.div(priceOfBTCBinUSDT);
+    const wantedPriceOfAmtInBtcb = targetPriceUSDT / priceOfBTCBinUSDT;
 
-    const prevDeltaX = k.mul(oneEth).div(wantedPriceOfAmtInBtcb);
+    const prevDeltaX = (k * oneEth) / wantedPriceOfAmtInBtcb;
     const deltaX = new nativeBigNumber(prevDeltaX.toString()).sqrt();
-    const amtToTrade = amtReserves
-      .sub(BigNumber.from(deltaX.toFixed(0)))
-      .mul(10020) //Add a little bit extra to pass fee structure
-      .div(10000);
+    const amtToTrade =
+      ((amtReserves - BigInt(deltaX.toFixed(0))) * 10020n) / 10000n;
 
     return amtToTrade;
   }
@@ -104,7 +101,10 @@ describe("Tests of Oracle contract", function () {
     const owner = wallets[0];
     // Fetch the current reserves from the pool
     const priceOfBTCBinUSDT = await priceFeeder.getLatestBTCBPrice();
-    const pairAMTBTCB = await factory.getPair(amt.address, btcb.address);
+    const pairAMTBTCB = await factory.getPair(
+      amt.getAddress(),
+      btcb.getAddress()
+    );
     let reserveAMT = await amt.balanceOf(pairAMTBTCB);
     let reserveBTCB = await btcb.balanceOf(pairAMTBTCB);
 
@@ -112,19 +112,19 @@ describe("Tests of Oracle contract", function () {
       reserveAMT,
       reserveBTCB,
       priceOfBTCBinUSDT,
-      ethers.utils.parseEther(targetPriceInUSDT),
+      ethers.parseEther(targetPriceInUSDT),
       false
     );
-    if (amtToTrade.lt(0)) {
-      const tradeAmount = amtToTrade.abs();
-      await amt.approve(router.address, tradeAmount);
-
+    if (amtToTrade < 0) {
+      const tradeAmount = amtToTrade < 0 ? -amtToTrade : amtToTrade;
+      await amt.approve(router.getAddress(), tradeAmount);
+      const latestBlock = await ethers.provider.getBlock("latest");
       await router.swapExactTokensForTokens(
         tradeAmount,
         0, // This is a placeholder; in reality, you'd calculate a minimum amount out based on allowable slippage.
-        [amt.address, btcb.address],
+        [amt.getAddress(), btcb.getAddress()],
         owner.address,
-        (await ethers.provider.getBlock("latest")).timestamp + 19000000
+        latestBlock ? latestBlock.timestamp + 19000000 : 1
       );
     } else {
       //Implement buy logic to increase the price
@@ -138,7 +138,7 @@ describe("Tests of Oracle contract", function () {
   });
 
   it("UNIT: Consult must revert with wrong token addresses", async function () {
-    await expect(oracleAMTBTCB.consult(usdt.address, 1)).to.revertedWith(
+    await expect(oracleAMTBTCB.consult(usdt.getAddress(), 1)).to.revertedWith(
       "Oracle: INVALID_TOKEN"
     );
   });
@@ -147,14 +147,18 @@ describe("Tests of Oracle contract", function () {
     const NewOracle = await ethers.getContractFactory("Oracle");
     const TokenA = await ethers.getContractFactory("TestERC20");
     const tokenA = await TokenA.deploy(0, "Token A", "A");
-    await tokenA.deployed();
+    await tokenA.waitForDeployment();
     const TokenB = await ethers.getContractFactory("TestERC20");
     const tokenB = await TokenB.deploy(0, "Token B", "B");
-    await tokenB.deployed();
-    await factory.createPair(tokenA.address, tokenB.address);
+    await tokenB.waitForDeployment();
+    await factory.createPair(tokenA.getAddress(), tokenB.getAddress());
 
     await expect(
-      NewOracle.deploy(factory.address, tokenA.address, tokenB.address)
+      NewOracle.deploy(
+        factory.getAddress(),
+        tokenA.getAddress(),
+        tokenB.getAddress()
+      )
     ).to.revertedWith("Oracle: NO_RESERVES");
   });
 });

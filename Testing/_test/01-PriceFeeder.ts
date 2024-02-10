@@ -11,14 +11,15 @@ import {
   TestERC20,
   TestLiqPoolAndRouter,
   WBNB,
-} from "../../typechain-types";
-import { Amt } from "../../typechain-types";
-import { BurnVault } from "../../typechain-types";
-import { BigNumber } from "ethers";
-import { BigNumber as nativeBigNumber } from "bignumber.js";
+} from "../typechain-types";
+import { Amt } from "../typechain-types";
+import { BurnVault } from "../typechain-types";
 import fs from "fs";
-import { Oracle } from "../../typechain-types";
-import contractAddresses from "../../Addresses/contractAddresses";
+import { Oracle } from "../typechain-types";
+import contractAddresses from "../Addresses/contractAddresses";
+import { BigNumber as nativeBigNumber } from "bignumber.js";
+import { Networkish } from "ethers";
+
 const { expect } = chai;
 const deployPancake = require("../../scripts/deployPancakeSwapV2");
 const deployExternalToken = require("../../scripts/deployExternalTokens");
@@ -27,8 +28,8 @@ const setInitialState = require("../../scripts/setInitialState");
 const deployOracles = require("../../scripts/deployOracles");
 describe("Tests of price feeder contract", function () {
   //This values need to be updated to work
-  const btcbPrice = 42000;
-  const amtPrice = "0.46";
+  const btcbPrice = 47500;
+  const amtPrice = "0.51";
 
   let priceFeeder: PriceFeeder;
   let factory: PancakeFactory;
@@ -43,9 +44,10 @@ describe("Tests of price feeder contract", function () {
   let oracleAMTBTCB: Oracle;
   let oracleUSDTBTCB: Oracle;
   let loanProtocol: LoanProtocol;
-  const BSC_URL = "https://bsc.publicnode.com";
+
+  const BSC_URL = "https://bscrpc.com";
   this.beforeEach(async function () {
-    const bscProvider = new ethers.providers.JsonRpcProvider(BSC_URL);
+    const bscProvider = new ethers.JsonRpcProvider(BSC_URL);
     const latestBlock = (await bscProvider.getBlockNumber()) - 100;
 
     await network.provider.send("hardhat_reset", [
@@ -80,7 +82,8 @@ describe("Tests of price feeder contract", function () {
       usdt,
       btcb,
       amt,
-      master
+      master,
+      true
     ));
 
     await advanceTime(3600);
@@ -92,25 +95,24 @@ describe("Tests of price feeder contract", function () {
     await network.provider.send("evm_mine");
   }
   function calculateAmtToSell(
-    amtReserves: BigNumber,
-    btcbReserves: BigNumber,
-    priceOfBTCBinUSDT: BigNumber,
-    targetPriceUSDT: BigNumber,
+    amtReserves: bigint,
+    btcbReserves: bigint,
+    priceOfBTCBinUSDT: bigint,
+    targetPriceUSDT: bigint,
     increase: Boolean
   ) {
     // BigNumber representation of 1 for scaling purposes
-    const oneEth = ethers.BigNumber.from("1000000000000000000"); // Equivalent to 1 ether to scale up decimals
+    const oneEth = BigInt("1000000000000000000"); // Equivalent to 1 ether to scale up decimals
 
-    const k = amtReserves.mul(btcbReserves);
+    const k = amtReserves * btcbReserves;
 
-    const wantedPriceOfAmtInBtcb = targetPriceUSDT.div(priceOfBTCBinUSDT);
+    const wantedPriceOfAmtInBtcb = targetPriceUSDT / priceOfBTCBinUSDT;
 
-    const prevDeltaX = k.mul(oneEth).div(wantedPriceOfAmtInBtcb);
+    const prevDeltaX = (k * oneEth) / wantedPriceOfAmtInBtcb;
     const deltaX = new nativeBigNumber(prevDeltaX.toString()).sqrt();
-    const amtToTrade = amtReserves
-      .sub(BigNumber.from(deltaX.toFixed(0)))
-      .mul(10020) //Add a little bit extra to pass fee structure
-      .div(10000);
+
+    const amtToTrade =
+      ((amtReserves - BigInt(deltaX.toFixed(0))) * 10020n) / 10000n;
 
     return amtToTrade;
   }
@@ -122,7 +124,10 @@ describe("Tests of price feeder contract", function () {
     const owner = wallets[0];
     // Fetch the current reserves from the pool
     const priceOfBTCBinUSDT = await priceFeeder.getLatestBTCBPrice();
-    const pairAMTBTCB = await factory.getPair(amt.address, btcb.address);
+    const pairAMTBTCB = await factory.getPair(
+      amt.getAddress(),
+      btcb.getAddress()
+    );
     let reserveAMT = await amt.balanceOf(pairAMTBTCB);
     let reserveBTCB = await btcb.balanceOf(pairAMTBTCB);
 
@@ -130,19 +135,19 @@ describe("Tests of price feeder contract", function () {
       reserveAMT,
       reserveBTCB,
       priceOfBTCBinUSDT,
-      ethers.utils.parseEther(targetPriceInUSDT),
+      ethers.parseEther(targetPriceInUSDT),
       false
     );
-    if (amtToTrade.lt(0)) {
-      const tradeAmount = amtToTrade.abs();
-      await amt.approve(router.address, tradeAmount);
-
+    if (amtToTrade < 0) {
+      const tradeAmount = amtToTrade < 0 ? -amtToTrade : amtToTrade;
+      await amt.approve(router.getAddress(), tradeAmount);
+      const latestBlock = await ethers.provider.getBlock("latest");
       await router.swapExactTokensForTokens(
         tradeAmount,
         0, // This is a placeholder; in reality, you'd calculate a minimum amount out based on allowable slippage.
-        [amt.address, btcb.address],
+        [amt.getAddress(), btcb.getAddress()],
         owner.address,
-        (await ethers.provider.getBlock("latest")).timestamp + 19000000
+        latestBlock ? latestBlock.timestamp + 19000000 : 1
       );
     } else {
       //Implement buy logic to increase the price
@@ -161,11 +166,9 @@ describe("Tests of price feeder contract", function () {
   it("UNIT: Price Feeder must return the correct value in usdt quoting amt", async function () {
     //Actual AMT price (Need to be updated to work)
 
-    expect(
-      await priceFeeder.getPrice(ethers.utils.parseEther("1"))
-    ).to.be.closeTo(
-      ethers.utils.parseEther(amtPrice),
-      ethers.utils.parseEther("0.01")
+    expect(await priceFeeder.getPrice(ethers.parseEther("1"))).to.be.closeTo(
+      ethers.parseEther(amtPrice),
+      ethers.parseEther("0.01")
     );
   });
 
@@ -173,20 +176,19 @@ describe("Tests of price feeder contract", function () {
     const wallets = await ethers.getSigners();
     const owner = wallets[0];
 
-    await btcb.approve(router.address, ethers.utils.parseEther("100"));
+    await btcb.approve(router.getAddress(), ethers.parseEther("100"));
+    const latestBlock = await ethers.provider.getBlock("latest");
     await router.swapExactTokensForTokens(
-      ethers.utils.parseEther("100"),
+      ethers.parseEther("100"),
       0,
-      [btcb.address, amt.address],
+      [btcb.getAddress(), amt.getAddress()],
       owner.address,
-      (await ethers.provider.getBlock("latest")).timestamp + 19000000
+      latestBlock ? latestBlock.timestamp + 19000000 : 1
     );
 
-    expect(
-      await priceFeeder.getPrice(ethers.utils.parseEther("1"))
-    ).to.be.closeTo(
-      ethers.utils.parseEther(amtPrice),
-      ethers.utils.parseEther("0.01")
+    expect(await priceFeeder.getPrice(ethers.parseEther("1"))).to.be.closeTo(
+      ethers.parseEther(amtPrice),
+      ethers.parseEther("0.01")
     );
   });
 
@@ -196,11 +198,9 @@ describe("Tests of price feeder contract", function () {
     const priceTarget = "0.2";
     await movePriceToTarget(priceTarget);
 
-    expect(
-      await priceFeeder.getPrice(ethers.utils.parseEther("1"))
-    ).to.be.closeTo(
-      ethers.utils.parseEther(priceTarget),
-      ethers.utils.parseEther("0.01")
+    expect(await priceFeeder.getPrice(ethers.parseEther("1"))).to.be.closeTo(
+      ethers.parseEther(priceTarget),
+      ethers.parseEther("0.01")
     );
   });
 
@@ -213,49 +213,49 @@ describe("Tests of price feeder contract", function () {
     await expect(
       PriceFeeder.deploy(
         addressZero,
-        amt.address,
-        btcb.address,
-        btcb.address,
-        factory.getPair(amt.address, btcb.address)
+        amt.getAddress(),
+        btcb.getAddress(),
+        btcb.getAddress(),
+        factory.getPair(amt.getAddress(), btcb.getAddress())
       )
     ).to.revertedWith("Oracle AMTBTCB must not be the zero address");
 
     await expect(
       PriceFeeder.deploy(
-        oracleAMTBTCB.address,
+        oracleAMTBTCB.getAddress(),
         addressZero,
-        btcb.address,
-        btcb.address,
-        factory.getPair(amt.address, btcb.address)
+        btcb.getAddress(),
+        btcb.getAddress(),
+        factory.getPair(amt.getAddress(), btcb.getAddress())
       )
     ).to.revertedWith("Amt must not be the zero address");
 
     await expect(
       PriceFeeder.deploy(
-        oracleAMTBTCB.address,
-        amt.address,
+        oracleAMTBTCB.getAddress(),
+        amt.getAddress(),
         addressZero,
-        btcb.address,
-        factory.getPair(amt.address, btcb.address)
+        btcb.getAddress(),
+        factory.getPair(amt.getAddress(), btcb.getAddress())
       )
     ).to.revertedWith("Btcb must not be the zero address");
 
     await expect(
       PriceFeeder.deploy(
-        oracleAMTBTCB.address,
-        amt.address,
-        btcb.address,
+        oracleAMTBTCB.getAddress(),
+        amt.getAddress(),
+        btcb.getAddress(),
         addressZero,
-        factory.getPair(amt.address, btcb.address)
+        factory.getPair(amt.getAddress(), btcb.getAddress())
       )
     ).to.revertedWith("priceFeedUSDTBTCB must not be the zero address");
 
     await expect(
       PriceFeeder.deploy(
-        oracleAMTBTCB.address,
-        amt.address,
-        btcb.address,
-        btcb.address,
+        oracleAMTBTCB.getAddress(),
+        amt.getAddress(),
+        btcb.getAddress(),
+        btcb.getAddress(),
         addressZero
       )
     ).to.revertedWith("Pair AMTBTCB must not be the zero address");
@@ -265,17 +265,19 @@ describe("Tests of price feeder contract", function () {
     const wallets = await ethers.getSigners();
     const owner = wallets[0];
     const btcbPrice = await priceFeeder.getLatestBTCBPrice();
-    const pairAddress = await factory.getPair(amt.address, btcb.address);
+    const pairAddress = await factory.getPair(
+      amt.getAddress(),
+      btcb.getAddress()
+    );
     const amtPoolBalance = await amt.balanceOf(pairAddress);
     const btcbPoolBalance = await btcb.balanceOf(pairAddress);
-    console.log(amtPoolBalance.mul(10));
     console.log(
-      "This data: " + (await priceFeeder.getPrice(amtPoolBalance.mul(10)))
+      "This data: " + (await priceFeeder.getPrice(amtPoolBalance * 10n))
     );
-    console.log("BTCB pool balance x price: " + btcbPoolBalance.mul(btcbPrice));
-    expect(await priceFeeder.getPrice(amtPoolBalance.mul(10))).to.be.closeTo(
-      btcbPoolBalance.mul(btcbPrice),
-      btcbPoolBalance.mul(btcbPrice).div(99).mul(100) // 10% margin to total BTCB balance of pool
+    console.log("BTCB pool balance x price: " + btcbPoolBalance * btcbPrice);
+    expect(await priceFeeder.getPrice(amtPoolBalance * 10n)).to.be.closeTo(
+      btcbPoolBalance * btcbPrice,
+      (btcbPoolBalance * btcbPrice * 100n) / 99n // 10% margin to total BTCB balance of pool
     );
   });
 });

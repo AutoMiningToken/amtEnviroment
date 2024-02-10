@@ -3,8 +3,6 @@ const deployExternalToken = require("../scripts/deployExternalTokens");
 const mainDeploy = require("../scripts/deployMainAmtContracts");
 const setInitialState = require("../scripts/setInitialState");
 const deployOracles = require("../scripts/deployOracles");
-import { BigNumber } from "ethers";
-import { BigNumber as nativeBigNumber } from "bignumber.js";
 import fs from "fs";
 import {
   ERC20,

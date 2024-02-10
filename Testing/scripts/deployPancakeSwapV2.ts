@@ -7,24 +7,24 @@ async function main(usdt: TestERC20, btcb: TestERC20) {
   const owner = wallets[0];
 
   const Factory = await ethers.getContractFactory("PancakeFactory");
-  const factory = await Factory.deploy(owner.address, {
+  const factory = await Factory.deploy(owner.getAddress(), {
     gasLimit: 9000000000000000,
   });
 
-  await factory.deployed();
+  await factory.waitForDeployment();
 
   const WBNB = await ethers.getContractFactory("WBNB");
   const wbnb = await WBNB.deploy();
-  await wbnb.deployed();
+  await wbnb.waitForDeployment();
   const Router = await ethers.getContractFactory("PancakeRouter");
-  const router = await Router.deploy(factory.address, wbnb.address, {
+  const router = await Router.deploy(factory.getAddress(), wbnb.getAddress(), {
     gasLimit: 9000000000000000,
   });
-  await router.deployed();
-  await factory.createPair(usdt.address, btcb.address);
+  await router.waitForDeployment();
+  await factory.createPair(usdt.getAddress(), btcb.getAddress());
   const pair: PancakePair = await ethers.getContractAt(
     "PancakePair",
-    await factory.getPair(usdt.address, btcb.address)
+    await factory.getPair(usdt.getAddress(), btcb.getAddress())
   );
 
   // Return deployed contracts for use in tests

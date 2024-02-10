@@ -8,30 +8,30 @@ async function main(btcb: ERC20, router: PancakeRouter) {
 
   const AMT = await ethers.getContractFactory("Amt");
   const amt = await AMT.deploy();
-  await amt.deployed();
+  await amt.waitForDeployment();
 
   const LIQAMT = await ethers.getContractFactory("LiquidityAmt");
   const liqAmt = await LIQAMT.deploy();
-  await liqAmt.deployed();
+  await liqAmt.waitForDeployment();
 
   const BURNVAULT = await ethers.getContractFactory("BurnVault");
-  const burnVault = await BURNVAULT.deploy(amt.address, btcb.address);
-  await burnVault.deployed();
+  const burnVault = await BURNVAULT.deploy(amt.getAddress(), btcb.getAddress());
+  await burnVault.waitForDeployment();
 
   const MASTER = await ethers.getContractFactory("Master");
   const master = await MASTER.deploy(
-    amt.address,
-    btcb.address,
-    burnVault.address,
-    liqAmt.address,
-    owner.address,
-    router.address
+    amt.getAddress(),
+    btcb.getAddress(),
+    burnVault.getAddress(),
+    liqAmt.getAddress(),
+    owner.getAddress(),
+    router.getAddress()
   );
 
-  await amt.transferOwnership(master.address);
-  await liqAmt.transferOwnership(master.address);
+  await amt.transferOwnership(master.getAddress());
+  await liqAmt.transferOwnership(master.getAddress());
 
-  await master.mintMaster(owner.address, ethers.utils.parseEther("51000000"));
+  await master.mintMaster(owner.getAddress(), ethers.parseEther("51000000"));
   // Return deployed contracts for use in tests
   return {
     amt,

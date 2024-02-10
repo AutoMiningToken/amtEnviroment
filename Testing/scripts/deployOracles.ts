@@ -1,6 +1,7 @@
 // deployOracles.ts
 
 import { ethers } from "hardhat";
+
 import {
   Amt,
   ERC20,
@@ -15,53 +16,58 @@ async function main(
   usdt: ERC20,
   btcb: ERC20,
   amt: Amt,
-  master: Master
+  master: Master,
+  onChain: boolean
 ) {
+  ethers;
   const wallets = await ethers.getSigners();
   const owner = wallets[0];
 
   const Oracle = await ethers.getContractFactory("Oracle");
 
   const oracleAMTBTCB = await Oracle.deploy(
-    factory.address,
-    amt.address,
-    btcb.address
+    factory.getAddress(),
+    amt.getAddress(),
+    btcb.getAddress()
   );
 
-  await oracleAMTBTCB.deployed();
+  await oracleAMTBTCB.waitForDeployment();
 
   const MockChainlinkOracle = await ethers.getContractFactory(
     "MockChainlinkOracle"
   );
-
-  const chainlinkOracle = await ethers.getContractAt(
-    "MockChainlinkOracle",
-    "0x264990fbd0a4796a3e3d8e37c4d5f87a3aca5ebf"
-  );
+  const chainLinkMocked = await MockChainlinkOracle.deploy(4728805000000);
+  await chainLinkMocked.waitForDeployment();
+  const chainlinkOracle = onChain
+    ? await ethers.getContractAt(
+        "MockChainlinkOracle",
+        "0x264990fbd0a4796a3e3d8e37c4d5f87a3aca5ebf"
+      )
+    : chainLinkMocked;
 
   const PriceFeeder = await ethers.getContractFactory("PriceFeeder");
   const priceFeeder = await PriceFeeder.deploy(
-    oracleAMTBTCB.address,
-    amt.address,
-    btcb.address,
-    chainlinkOracle.address,
-    factory.getPair(amt.address, btcb.address)
+    oracleAMTBTCB.getAddress(),
+    amt.getAddress(),
+    btcb.getAddress(),
+    chainlinkOracle.getAddress(),
+    factory.getPair(amt.getAddress(), btcb.getAddress())
   );
-  await priceFeeder.deployed();
+  await priceFeeder.waitForDeployment();
 
   const LoanProtocol = await ethers.getContractFactory("LoanProtocol");
   const loanProtocol = await LoanProtocol.deploy(
-    btcb.address,
-    usdt.address,
-    amt.address,
-    master.address,
-    priceFeeder.address,
+    btcb.getAddress(),
+    usdt.getAddress(),
+    amt.getAddress(),
+    master.getAddress(),
+    priceFeeder.getAddress(),
     2,
     2,
     3
   );
 
-  await loanProtocol.deployed();
+  await loanProtocol.waitForDeployment();
 
   return {
     oracleAMTBTCB,

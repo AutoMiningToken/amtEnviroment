@@ -27,7 +27,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         uint256 collateralLocked; /// @notice The amount of AMT tokens locked as collateral.
         uint256 loanTimestamp; /// @notice Timestamp when the loan was created.
         uint256 loanPrice; /// @notice Price of the total AMT used as collateral at the moment of the loan creation.
-        uint256 loanRatio; /// @notice The 1/loan-to-value ratio used for this loan.
+        uint256 loanRatio; /// @notice The loan-to-value ratio used for this loan.
         address priceFeeder; /// @notice the price feeder address used at the moment of loan creation
     }
 
@@ -83,14 +83,12 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @param _amt Address of the AMT token.
     /// @param _master Address of the Master contract
     /// @param _priceFeeder Address of the price feeder contract.
-    /// @param _loanRatio Initial 1/loan-to-value ratio for loans.
     constructor(
         address _btcb,
         address _usdt,
         address _amt,
         address _master,
         address _priceFeeder,
-        uint256 _loanRatio,
         uint256 _loanRatioMin,
         uint256 _loanRatioMax
     ) {
@@ -111,7 +109,6 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
             _priceFeeder != address(0),
             "Price feeder address must not be the zero address"
         );
-        require(_loanRatio != 0, "Loan ratio must not be zero");
         require(_loanRatioMin > 0, "Minumun loan ratio must not be zero");
         require(
             _loanRatioMax >= _loanRatioMin,
@@ -141,8 +138,8 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         uint256 loanRatio
     ) external whenNotPaused nonReentrant {
         require(amtAmount > 0, "amtAmount must be greatter than zero");
-        require(loanRatio <= loanRatioMax, "");
-        require(loanRatio >= loanRatioMin, "");
+        require(loanRatio <= loanRatioMax, "Loan ratio must be lower than maximun allowed");
+        require(loanRatio >= loanRatioMin, "Loan ratio must be greatter than minimun allowed");
         require(
             amt.balanceOf(msg.sender) >= amtAmount,
             "Not enought AMT balance"
@@ -169,6 +166,15 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         usdt.safeTransfer(msg.sender, loanAmount);
 
         emit LoanCreated(msg.sender, loanAmount, amtAmount);
+    }
+
+    function addCollateral(uint256 loanIndex, uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must not be zero");
+        require(loanIndex < userLoans[msg.sender].length, "Invalid loan index");
+        require(amt.balanceOf(msg.sender) >= amount, "insufficient AMT balance");
+
+        amt.safeTransferFrom(msg.sender,address(this), amount);
+        userLoans[msg.sender][loanIndex].collateralLocked += amount;
     }
 
     /// @notice Allows users to close an active loan.
@@ -372,6 +378,6 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         uint256 loanRatio
     ) internal view returns (uint256) {
         uint256 amtPrice = priceFeeder.getPrice(amtAmount);
-        return (amtPrice) / loanRatio;
+        return ((amtPrice) * loanRatio) / 100;
     }
 }
