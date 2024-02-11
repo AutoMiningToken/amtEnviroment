@@ -223,10 +223,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("1")
     );
-
-    const rateMax = await loanProtocol.loanRatioMax();
-    const rateMin = await loanProtocol.loanRatioMin();
-    const rate = 2n;
+    const rate = 50n;
     await amt
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
@@ -235,7 +232,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
     await amt
       .connect(user)
@@ -249,6 +249,28 @@ describe("Test of loan protocol", function () {
     );
   });
 
+  it("UNIT: Users must not be able to create loans with rate outside the range of ratio", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+    await amt.transfer(user.address, ethers.parseEther("1"));
+
+    //Send USDT to the loan protocol
+    await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("150000"));
+
+    const priceFromPriceFeeder = await priceFeeder.getPrice(
+      ethers.parseEther("1")
+    );
+
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+    await expect(
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), 49)
+    ).to.revertedWith("Loan ratio must be greatter than minimun allowed");
+    await expect(
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), 81)
+    ).to.revertedWith("Loan ratio must be lower than maximun allowed");
+  });
   it("UNIT: Users must not create loans with borrowed ammount equal to zero", async function () {
     const wallets = await ethers.getSigners();
     const [owner, user] = wallets;
@@ -263,7 +285,7 @@ describe("Test of loan protocol", function () {
 
     const rateMax = await loanProtocol.loanRatioMax();
     const rateMin = await loanProtocol.loanRatioMin();
-    const rate = 2;
+    const rate = 50n;
 
     await amt
       .connect(user)
@@ -283,7 +305,7 @@ describe("Test of loan protocol", function () {
       ethers.parseEther("1")
     );
 
-    const rate = 2n;
+    const rate = 50n;
 
     //Send USDT to the loan protocol 1 less unit than needed to execute
     await usdt.transfer(
@@ -309,10 +331,13 @@ describe("Test of loan protocol", function () {
       ethers.parseEther("1")
     );
 
-    const rate = 2n;
+    const rate = 50n;
 
     //Send USDT to the loan protocol 1 less unit than needed to execute
-    await usdt.transfer(loanProtocol.getAddress(), priceFromPriceFeeder / rate);
+    await usdt.transfer(
+      loanProtocol.getAddress(),
+      (priceFromPriceFeeder * rate) / 100n
+    );
 
     await amt
       .connect(user)
@@ -347,9 +372,9 @@ describe("Test of loan protocol", function () {
       const priceFromPriceFeeder = await priceFeeder.getPrice(
         ethers.parseEther(amtAmount)
       );
-      const rate = 2n;
+      const rate = 50n;
       const expectedLoan = {
-        amountBorrowed: priceFromPriceFeeder / rate,
+        amountBorrowed: (priceFromPriceFeeder * rate) / 100n,
         collateralLocked: ethers.parseEther(amtAmount),
         loanPrice: await priceFeeder.getPrice(ethers.parseEther(amtAmount)),
         loanRatio: rate,
@@ -385,7 +410,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("100")
     );
-    const rate = 2n;
+    const rate = 50n;
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
@@ -393,15 +418,20 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await usdt
       .connect(user)
-      .approve(loanProtocol.getAddress(), priceFromPriceFeeder / rate);
+      .approve(loanProtocol.getAddress(), (priceFromPriceFeeder * rate) / 100n);
 
     await expect(
-      loanProtocol.connect(user).closeLoan(0, priceFromPriceFeeder / rate)
+      loanProtocol
+        .connect(user)
+        .closeLoan(0, (priceFromPriceFeeder * rate) / 100n)
     ).to.changeTokenBalances(
       amt,
       [await loanProtocol.getAddress(), user.address],
@@ -413,17 +443,25 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
     await usdt
       .connect(user)
-      .approve(loanProtocol.getAddress(), priceFromPriceFeeder / rate);
+      .approve(loanProtocol.getAddress(), (priceFromPriceFeeder * rate) / 100n);
     await expect(
-      loanProtocol.connect(user).closeLoan(0, priceFromPriceFeeder / rate)
+      loanProtocol
+        .connect(user)
+        .closeLoan(0, (priceFromPriceFeeder * rate) / 100n)
     ).to.changeTokenBalances(
       usdt,
       [await loanProtocol.getAddress(), user.address],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
   });
 
@@ -438,7 +476,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("100")
     );
-    const rate = 2n;
+    const rate = 50n;
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
@@ -446,7 +484,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await usdt
@@ -475,14 +516,17 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("100")
     );
-    const rate = 2n;
+    const rate = 50n;
 
     await expect(
       loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await usdt
@@ -512,10 +556,10 @@ describe("Test of loan protocol", function () {
       const priceFromPriceFeeder = await priceFeeder.getPrice(
         ethers.parseEther(amtAmount)
       );
-      const rate = 2n;
+      const rate = 50n;
 
       const expectedLoan = {
-        amountBorrowed: priceFromPriceFeeder / rate,
+        amountBorrowed: (priceFromPriceFeeder * rate) / 100n,
         collateralLocked: ethers.parseEther(amtAmount),
         loanPrice: await priceFeeder.getPrice(ethers.parseEther(amtAmount)),
         loanRatio: rate,
@@ -613,7 +657,7 @@ describe("Test of loan protocol", function () {
       ethers.parseEther("1")
     );
 
-    const rate = 2n;
+    const rate = 50n;
     await amt
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
@@ -622,7 +666,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     const userLoans = await loanProtocol.getUserLoans(user.address);
@@ -633,7 +680,7 @@ describe("Test of loan protocol", function () {
 
     await movePriceToTarget(
       ethers.formatEther(
-        userLoans[0].loanPrice / userLoans[0].loanRatio - 100000000n
+        (userLoans[0].loanPrice * userLoans[0].loanRatio) / 100n - 100000000n
       )
     );
     await advanceTime(3600);
@@ -664,7 +711,7 @@ describe("Test of loan protocol", function () {
       ethers.parseEther("1")
     );
 
-    const rate = 2n;
+    const rate = 50n;
     await amt
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
@@ -673,7 +720,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
     await expect(
       loanProtocol.isLoanLiquidable(1, user.address)
@@ -696,7 +746,7 @@ describe("Test of loan protocol", function () {
       ethers.parseEther("1")
     );
 
-    const rate = 2n;
+    const rate = 50n;
     await amt
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
@@ -705,7 +755,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     const userLoans = await loanProtocol.getUserLoans(user.address);
@@ -715,7 +768,7 @@ describe("Test of loan protocol", function () {
     );
     await movePriceToTarget(
       ethers.formatEther(
-        userLoans[0].loanPrice / userLoans[0].loanRatio - 1000000n
+        (userLoans[0].loanPrice * userLoans[0].loanRatio) / 100n - 1000000n
       )
     );
     await advanceTime(3600);
@@ -757,9 +810,9 @@ describe("Test of loan protocol", function () {
       const priceFromPriceFeeder = await priceFeeder.getPrice(
         ethers.parseEther(amtAmount)
       );
-      const rate = 2n;
+      const rate = 50n;
       const expectedLoan = {
-        amountBorrowed: priceFromPriceFeeder / rate,
+        amountBorrowed: (priceFromPriceFeeder * rate) / 100n,
         collateralLocked: ethers.parseEther(amtAmount),
         loanPrice: await priceFeeder.getPrice(ethers.parseEther(amtAmount)),
         loanRatio: rate,
@@ -788,10 +841,10 @@ describe("Test of loan protocol", function () {
       const priceFromPriceFeeder = await priceFeeder.getPrice(
         ethers.parseEther(amtAmount)
       );
-      const rate = 2n;
+      const rate = 50n;
 
       const expectedLoan = {
-        amountBorrowed: priceFromPriceFeeder / rate,
+        amountBorrowed: (priceFromPriceFeeder * rate) / 100n,
         collateralLocked: ethers.parseEther(amtAmount),
         loanPrice: await priceFeeder.getPrice(ethers.parseEther(amtAmount)),
         loanRatio: rate,
@@ -846,7 +899,6 @@ describe("Test of loan protocol", function () {
 
     //We will re check the data
 
-    //Define this function for clear visualization of the indexes of expectedLoans and the new loans created
     // From real index of loans in the contract to index in the expected loan
     function parseIndex(i: number) {
       if (i == 0) {
@@ -928,7 +980,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("100")
     );
-    const rate = 2n;
+    const rate = 50n;
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
@@ -936,14 +988,18 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await usdt
       .connect(user)
-      .approve(loanProtocol.getAddress(), priceFromPriceFeeder / rate);
+      .approve(loanProtocol.getAddress(), (priceFromPriceFeeder * rate) / 100n);
 
-    const usdtToReturn = priceFromPriceFeeder / rate - ethers.parseEther("10");
+    const usdtToReturn =
+      (priceFromPriceFeeder * rate) / 100n - ethers.parseEther("10");
     await expect(
       loanProtocol.connect(user).closeLoan(0, usdtToReturn)
     ).to.changeTokenBalances(
@@ -952,9 +1008,9 @@ describe("Test of loan protocol", function () {
       [
         BigInt(0) -
           (ethers.parseEther("100") * usdtToReturn) /
-            (priceFromPriceFeeder / rate),
+            ((priceFromPriceFeeder * rate) / 100n),
         (ethers.parseEther("100") * usdtToReturn) /
-          (priceFromPriceFeeder / rate),
+          ((priceFromPriceFeeder * rate) / 100n),
       ]
     );
   });
@@ -970,7 +1026,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("100")
     );
-    const rate = 2n;
+    const rate = 50n;
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
@@ -978,14 +1034,18 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await usdt
       .connect(user)
-      .approve(loanProtocol.getAddress(), priceFromPriceFeeder / rate);
+      .approve(loanProtocol.getAddress(), (priceFromPriceFeeder * rate) / 100n);
 
-    const usdtToReturn = priceFromPriceFeeder / rate - ethers.parseEther("10");
+    const usdtToReturn =
+      (priceFromPriceFeeder * rate) / 100n - ethers.parseEther("10");
     await expect(
       loanProtocol.connect(user).closeLoan(0, usdtToReturn)
     ).to.changeTokenBalances(
@@ -994,19 +1054,20 @@ describe("Test of loan protocol", function () {
       [
         BigInt(0) -
           (ethers.parseEther("100") * usdtToReturn) /
-            (priceFromPriceFeeder / rate),
+            ((priceFromPriceFeeder * rate) / 100n),
         (ethers.parseEther("100") * usdtToReturn) /
-          (priceFromPriceFeeder / rate),
+          ((priceFromPriceFeeder * rate) / 100n),
       ]
     );
 
     const amtToBeReturnedInTotalClose =
       ethers.parseEther("100") -
-      (ethers.parseEther("100") * usdtToReturn) / (priceFromPriceFeeder / rate);
+      (ethers.parseEther("100") * usdtToReturn) /
+        ((priceFromPriceFeeder * rate) / 100n);
     await expect(
       loanProtocol
         .connect(user)
-        .closeLoan(0, priceFromPriceFeeder / rate - usdtToReturn)
+        .closeLoan(0, (priceFromPriceFeeder * rate) / 100n - usdtToReturn)
     ).to.changeTokenBalances(
       amt,
       [await loanProtocol.getAddress(), user.address],
@@ -1025,7 +1086,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("100")
     );
-    const rate = 2n;
+    const rate = 50n;
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
@@ -1033,7 +1094,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await usdt
@@ -1056,7 +1120,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("200")
     );
-    const rate = 2n;
+    const rate = 50n;
 
     await amt
       .connect(user)
@@ -1068,7 +1132,7 @@ describe("Test of loan protocol", function () {
       .to.emit(loanProtocol, "LoanCreated")
       .withArgs(
         user.address,
-        priceFromPriceFeeder / rate,
+        (priceFromPriceFeeder * rate) / 100n,
         ethers.parseEther("200")
       );
   });
@@ -1084,7 +1148,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("100")
     );
-    const rate = 2n;
+    const rate = 50n;
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
@@ -1092,35 +1156,40 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await usdt
       .connect(user)
-      .approve(loanProtocol.getAddress(), priceFromPriceFeeder / rate);
+      .approve(loanProtocol.getAddress(), (priceFromPriceFeeder * rate) / 100n);
 
-    const usdtToReturn = priceFromPriceFeeder / rate - ethers.parseEther("10");
+    const usdtToReturn =
+      (priceFromPriceFeeder * rate) / 100n - ethers.parseEther("10");
     await expect(loanProtocol.connect(user).closeLoan(0, usdtToReturn))
       .to.emit(loanProtocol, "LoanPartialClosed")
       .withArgs(
         user.address,
         usdtToReturn,
         (ethers.parseEther("100") * usdtToReturn) /
-          (priceFromPriceFeeder / rate)
+          ((priceFromPriceFeeder * rate) / 100n)
       );
 
     const amtToBeReturnedInTotalClose =
       ethers.parseEther("100") -
-      (ethers.parseEther("100") * usdtToReturn) / (priceFromPriceFeeder / rate);
+      (ethers.parseEther("100") * usdtToReturn) /
+        ((priceFromPriceFeeder * rate) / 100n);
     await expect(
       loanProtocol
         .connect(user)
-        .closeLoan(0, priceFromPriceFeeder / rate - usdtToReturn)
+        .closeLoan(0, (priceFromPriceFeeder * rate) / 100n - usdtToReturn)
     )
       .to.emit(loanProtocol, "LoanClosed")
       .withArgs(
         user.address,
-        priceFromPriceFeeder / rate - usdtToReturn,
+        (priceFromPriceFeeder * rate) / 100n - usdtToReturn,
         amtToBeReturnedInTotalClose
       );
   });
@@ -1155,7 +1224,7 @@ describe("Test of loan protocol", function () {
     await expect(loanProtocol.connect(user).createLoan(1, 2)).to.revertedWith(
       "Pausable: paused"
     );
-    const rate = 2n;
+    const rate = 50n;
     loanProtocol.connect(newPauseAdmin).resumeOperations();
     usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("1000"));
     await amt
@@ -1218,7 +1287,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("2000")
     );
-    const rate = 2n;
+    const rate = 50n;
 
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("6000"));
@@ -1229,7 +1298,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user1.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await expect(
@@ -1237,7 +1309,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user2.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await expect(
@@ -1245,7 +1320,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user3.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     //Payment to master contract
@@ -1328,9 +1406,8 @@ describe("Test of loan protocol", function () {
         amt.getAddress(),
         master.getAddress(),
         priceFeeder.getAddress(),
-        2,
-        2,
-        5
+        50,
+        80
       )
     ).to.revertedWith("Btcb address must not be the zero address");
 
@@ -1343,9 +1420,8 @@ describe("Test of loan protocol", function () {
         amt.getAddress(),
         master.getAddress(),
         priceFeeder.getAddress(),
-        2,
-        2,
-        5
+        50,
+        80
       )
     ).to.revertedWith("Usdt address must not be the zero address");
 
@@ -1358,9 +1434,8 @@ describe("Test of loan protocol", function () {
         addressZero,
         master.getAddress(),
         priceFeeder.getAddress(),
-        2,
-        2,
-        5
+        50,
+        80
       )
     ).to.revertedWith("Amt address must not be the zero address");
 
@@ -1373,9 +1448,8 @@ describe("Test of loan protocol", function () {
         amt.getAddress(),
         addressZero,
         priceFeeder.getAddress(),
-        2,
-        2,
-        5
+        50,
+        80
       )
     ).to.revertedWith("Master address must not be the zero address");
 
@@ -1388,13 +1462,12 @@ describe("Test of loan protocol", function () {
         amt.getAddress(),
         master.getAddress(),
         addressZero,
-        2,
-        2,
-        5
+        50,
+        80
       )
     ).to.revertedWith("Price feeder address must not be the zero address");
 
-    //Loan ratio as zero
+    //Loan ratio min as zero
     LoanProtocol = await ethers.getContractFactory("LoanProtocol");
     await expect(
       LoanProtocol.deploy(
@@ -1404,16 +1477,43 @@ describe("Test of loan protocol", function () {
         master.getAddress(),
         priceFeeder.getAddress(),
         0,
-        2,
-        5
+        80
       )
-    ).to.revertedWith("Loan ratio must not be zero");
+    ).to.revertedWith("Minumun loan ratio must not be zero");
+
+    //Loan ratio max as 100
+    LoanProtocol = await ethers.getContractFactory("LoanProtocol");
+    await expect(
+      LoanProtocol.deploy(
+        btcb.getAddress(),
+        usdt.getAddress(),
+        amt.getAddress(),
+        master.getAddress(),
+        priceFeeder.getAddress(),
+        50,
+        100
+      )
+    ).to.revertedWith("Maximun loan ratio must be lesser than 100");
+
+    //Loan ratio max as 100
+    LoanProtocol = await ethers.getContractFactory("LoanProtocol");
+    await expect(
+      LoanProtocol.deploy(
+        btcb.getAddress(),
+        usdt.getAddress(),
+        amt.getAddress(),
+        master.getAddress(),
+        priceFeeder.getAddress(),
+        80,
+        50
+      )
+    ).to.revertedWith("Maximun loan ratio must be greater than minumun");
   });
   it("UNIT: Users must not be able to create loans with amount 0", async function () {
     const wallets = await ethers.getSigners();
     const [owner, user] = wallets;
     await amt.transfer(user.address, ethers.parseEther("1"));
-    const rate = 2n;
+    const rate = 50n;
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("150000"));
     await amt
@@ -1428,7 +1528,7 @@ describe("Test of loan protocol", function () {
   it("UNIT: Users must not be able to create loans with not enought AMT", async function () {
     const wallets = await ethers.getSigners();
     const [owner, user] = wallets;
-    const rate = 2n;
+    const rate = 50n;
     amt
       .connect(user)
       .transfer(owner.address, await amt.balanceOf(user.address));
@@ -1454,7 +1554,7 @@ describe("Test of loan protocol", function () {
     const priceFromPriceFeeder = await priceFeeder.getPrice(
       ethers.parseEther("100")
     );
-    const rate = 2n;
+    const rate = 50n;
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
@@ -1462,7 +1562,10 @@ describe("Test of loan protocol", function () {
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
-      [priceFromPriceFeeder / rate, BigInt(0) - priceFromPriceFeeder / rate]
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
     );
 
     await usdt
@@ -1484,11 +1587,331 @@ describe("Test of loan protocol", function () {
     );
   });
 
-  it("UNIT: Owner must not be able to set a new loan ratio as zero", async function () {
+  it("UNIT: Owner must not be able to set a new minimun loan ratio as zero", async function () {
     const wallets = await ethers.getSigners();
     const owner = wallets[0];
     await expect(loanProtocol.setLoanRatio(0, 1)).to.revertedWith(
-      "Loan ratio must be greatter than zero"
+      "Minumun loan ratio must not be zero"
     );
+  });
+
+  it("UNIT: Owner must not be able to set a new maximun loan ratio as 100 or greater", async function () {
+    const wallets = await ethers.getSigners();
+    const owner = wallets[0];
+    await expect(loanProtocol.setLoanRatio(1, 100)).to.revertedWith(
+      "Maximun loan ratio must be lesser than 100"
+    );
+
+    await expect(loanProtocol.setLoanRatio(1, 101)).to.revertedWith(
+      "Maximun loan ratio must be lesser than 100"
+    );
+  });
+
+  it("UNIT: Owner must not be able to set a minimun loan ratio greater than maximun loan ratio", async function () {
+    const wallets = await ethers.getSigners();
+    const owner = wallets[0];
+    await expect(loanProtocol.setLoanRatio(60, 50)).to.revertedWith(
+      "Maximun loan ratio must be greater than minumun"
+    );
+  });
+
+  it("UNIT: Users must be able to add collateral to a created Loan and then close the loan and recive the total collateral blocked", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+
+    //Send USDT to the loan protocol
+    await usdt.transfer(
+      loanProtocol.getAddress(),
+      ethers.parseEther("1500000")
+    );
+    const priceFromPriceFeeder = await priceFeeder.getPrice(
+      ethers.parseEther("1")
+    );
+
+    const rate = 50n;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+    await expect(
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+    ).to.changeTokenBalances(
+      usdt,
+      [user.address, await loanProtocol.getAddress()],
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
+    );
+
+    const userLoans = await loanProtocol.getUserLoans(user.address);
+
+    expect(await loanProtocol.isLoanLiquidable(0, user.address)).to.be.equal(
+      false
+    );
+    await movePriceToTarget(
+      ethers.formatEther(
+        (userLoans[0].loanPrice * userLoans[0].loanRatio) / 100n - 1000000n
+      )
+    );
+    await advanceTime(3600);
+    await oracleAMTBTCB.update();
+    await advanceTime(3600);
+    await oracleAMTBTCB.update();
+    await advanceTime(3600);
+    await oracleAMTBTCB.update();
+    expect(await loanProtocol.isLoanLiquidable(0, user.address)).to.be.equal(
+      true
+    );
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("10"));
+    await expect(
+      loanProtocol.connect(user).addCollateral(0, ethers.parseEther("10"))
+    ).to.changeTokenBalances(
+      amt,
+      [user.address, await loanProtocol.getAddress()],
+      [0n - ethers.parseEther("10"), ethers.parseEther("10")]
+    );
+    expect(await loanProtocol.isLoanLiquidable(0, user.address)).to.be.equal(
+      false
+    );
+    await usdt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), (priceFromPriceFeeder * rate) / 100n);
+    await expect(
+      loanProtocol
+        .connect(user)
+        .closeLoan(0, (priceFromPriceFeeder * rate) / 100n)
+    ).to.changeTokenBalance(amt, user.address, ethers.parseEther("11"));
+  });
+
+  it("UNIT: Users must not be able to add collateral with amount 0", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+
+    //Send USDT to the loan protocol
+    await usdt.transfer(
+      loanProtocol.getAddress(),
+      ethers.parseEther("1500000")
+    );
+    const priceFromPriceFeeder = await priceFeeder.getPrice(
+      ethers.parseEther("1")
+    );
+
+    const rate = 50n;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+    await expect(
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+    ).to.changeTokenBalances(
+      usdt,
+      [user.address, await loanProtocol.getAddress()],
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
+    );
+
+    await expect(
+      loanProtocol.connect(user).addCollateral(0, 0)
+    ).to.revertedWith("Amount must not be zero");
+  });
+
+  it("UNIT: Users must not be able to add collateral with invalid loan index", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+
+    //Send USDT to the loan protocol
+    await usdt.transfer(
+      loanProtocol.getAddress(),
+      ethers.parseEther("1500000")
+    );
+    const priceFromPriceFeeder = await priceFeeder.getPrice(
+      ethers.parseEther("1")
+    );
+
+    const rate = 50n;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+    await expect(
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+    ).to.changeTokenBalances(
+      usdt,
+      [user.address, await loanProtocol.getAddress()],
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
+    );
+
+    await expect(
+      loanProtocol.connect(user).addCollateral(1, 1)
+    ).to.revertedWith("Invalid loan index");
+  });
+
+  it("UNIT: Users must not be able to add collateral with insufficient AMT balance", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+
+    //Send USDT to the loan protocol
+    await usdt.transfer(
+      loanProtocol.getAddress(),
+      ethers.parseEther("1500000")
+    );
+    const priceFromPriceFeeder = await priceFeeder.getPrice(
+      ethers.parseEther("1")
+    );
+
+    const rate = 50n;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+    await expect(
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+    ).to.changeTokenBalances(
+      usdt,
+      [user.address, await loanProtocol.getAddress()],
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
+    );
+    await amt
+      .connect(user)
+      .transfer(owner.address, await amt.balanceOf(user.address));
+    await expect(
+      loanProtocol.connect(user).addCollateral(0, 1)
+    ).to.revertedWith("insufficient AMT balance");
+  });
+
+  it("MODIFIERS: Testing only owner", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+    await expect(
+      loanProtocol.connect(user).setLoanRatio(10, 20)
+    ).to.revertedWith("Ownable: caller is not the owner");
+
+    await expect(
+      loanProtocol.connect(user).setPauseAdmin(user.address)
+    ).to.revertedWith("Ownable: caller is not the owner");
+
+    await expect(
+      loanProtocol.connect(user).liquidateLoan(0, user.address)
+    ).to.revertedWith("Ownable: caller is not the owner");
+
+    await expect(loanProtocol.connect(user).charge(1)).to.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+
+    await expect(loanProtocol.connect(user).withdrawlUsdt(1)).to.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(
+      loanProtocol.connect(user).setPriceFeeder(user.address)
+    ).to.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("MODIFIERS: Non re entrancy", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+
+    //Contract deployment
+    const MaliciousERC20 = await ethers.getContractFactory(
+      "MaliciousERC20Token"
+    );
+    const maliciousERC20 = await MaliciousERC20.deploy(
+      ethers.parseEther("10000000000")
+    );
+
+    await maliciousERC20.waitForDeployment();
+
+    const LoanProtocolWithMaliciousToken = await ethers.getContractFactory(
+      "LoanProtocol"
+    );
+    const loanProtocolWithMaliciousToken =
+      await LoanProtocolWithMaliciousToken.deploy(
+        btcb.getAddress(),
+        usdt.getAddress(),
+        maliciousERC20.getAddress(),
+        master.getAddress(),
+        priceFeeder.getAddress(),
+        50,
+        80
+      );
+    await loanProtocolWithMaliciousToken.waitForDeployment();
+
+    await maliciousERC20.setLoanContract(
+      loanProtocolWithMaliciousToken.getAddress(),
+      50
+    );
+    // CREATE LOAN test
+    await maliciousERC20.setFunctionToTest(1);
+    await maliciousERC20.transfer(user.address, ethers.parseEther("1"));
+    await usdt.transfer(
+      loanProtocolWithMaliciousToken.getAddress(),
+      ethers.parseEther("1")
+    );
+
+    await maliciousERC20
+      .connect(user)
+      .approve(
+        loanProtocolWithMaliciousToken.getAddress(),
+        ethers.parseEther("1")
+      );
+
+    await expect(
+      loanProtocolWithMaliciousToken.connect(user).createLoan(10000000, 50)
+    ).to.revertedWith("ReentrancyGuard: reentrant call");
+
+    //addCollateral
+    await maliciousERC20.setFunctionToTest(0);
+    await maliciousERC20.transfer(user.address, ethers.parseEther("1"));
+    await usdt.transfer(
+      loanProtocolWithMaliciousToken.getAddress(),
+      ethers.parseEther("1")
+    );
+
+    await maliciousERC20
+      .connect(user)
+      .approve(
+        loanProtocolWithMaliciousToken.getAddress(),
+        ethers.parseEther("1")
+      );
+
+    await loanProtocolWithMaliciousToken.connect(user).createLoan(10000000, 50);
+
+    await maliciousERC20.setFunctionToTest(2);
+    await expect(
+      loanProtocolWithMaliciousToken.connect(user).addCollateral(0, 100)
+    ).to.revertedWith("ReentrancyGuard: reentrant call");
+
+    //closeLoan
+    await maliciousERC20.setFunctionToTest(3);
+    await usdt
+      .connect(user)
+      .approve(
+        loanProtocolWithMaliciousToken.getAddress(),
+        ethers.parseEther("1")
+      );
+    const amountToReturn = (
+      await loanProtocolWithMaliciousToken.userLoans(user.address, 0)
+    ).amountBorrowed;
+    await expect(
+      loanProtocolWithMaliciousToken.connect(user).closeLoan(0, amountToReturn)
+    ).to.revertedWith("ReentrancyGuard: reentrant call");
   });
 });

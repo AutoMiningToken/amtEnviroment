@@ -116,7 +116,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         );
         require(
             _loanRatioMax < 100,
-            "Maximun loan ratio must be lesser than zero"
+            "Maximun loan ratio must be lesser than 100"
         );
         usdt = IERC20(_usdt);
         btcb = IERC20(_btcb);
@@ -172,7 +172,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         require(amount > 0, "Amount must not be zero");
         require(loanIndex < userLoans[msg.sender].length, "Invalid loan index");
         require(amt.balanceOf(msg.sender) >= amount, "insufficient AMT balance");
-
+        
         amt.safeTransferFrom(msg.sender,address(this), amount);
         userLoans[msg.sender][loanIndex].collateralLocked += amount;
     }
@@ -251,7 +251,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         );
         require(
             _loanRatioMax < 100,
-            "Maximun loan ratio must be lesser than zero"
+            "Maximun loan ratio must be lesser than 100"
         );
         loanRatioMax = _loanRatioMax;
         loanRatioMin = _loanRatioMin;

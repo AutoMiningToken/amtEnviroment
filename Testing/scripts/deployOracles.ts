@@ -62,9 +62,8 @@ async function main(
     amt.getAddress(),
     master.getAddress(),
     priceFeeder.getAddress(),
-    2,
-    2,
-    3
+    50,
+    80
   );
 
   await loanProtocol.waitForDeployment();
