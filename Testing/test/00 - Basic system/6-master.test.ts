@@ -26,20 +26,20 @@ describe("Master", function () {
 
     const Btcb = await ethers.getContractFactory("TestERC20");
     btcb = (await Btcb.deploy(1000000000, "Bitcoin", "BTCB")) as TestERC20;
-    await btcb.deployed();
+    await btcb.waitForDeployment();
 
     const Amt = await ethers.getContractFactory("Amt");
     amt = (await Amt.deploy()) as Amt;
-    await amt.deployed();
+    await amt.waitForDeployment();
 
     const LiqAmt = await ethers.getContractFactory("LiquidityAmt");
     liqAmt = (await LiqAmt.deploy()) as LiquidityAmt;
-    await liqAmt.deployed();
+    await liqAmt.waitForDeployment();
 
     const BurnVault = await ethers.getContractFactory("BurnVault");
     burnVault = (await BurnVault.deploy(
-      amt.address,
-      btcb.address
+      amt.getAddress(),
+      btcb.getAddress()
     )) as BurnVault;
 
     const TestLiqPoolAndRouter = await ethers.getContractFactory(
@@ -50,26 +50,29 @@ describe("Master", function () {
     )) as TestLiqPoolAndRouter;
     const Master = await ethers.getContractFactory("Master");
     master = (await Master.deploy(
-      amt.address,
-      btcb.address,
-      burnVault.address,
-      liqAmt.address,
+      amt.getAddress(),
+      btcb.getAddress(),
+      burnVault.getAddress(),
+      liqAmt.getAddress(),
       payerWallet.address,
-      testLiqPoolAndRouter.address
+      testLiqPoolAndRouter.getAddress()
     )) as Master;
-    await master.deployed();
+    await master.waitForDeployment();
 
-    await amt.transferOwnership(master.address);
-    await liqAmt.transferOwnership(master.address);
+    await amt.transferOwnership(master.getAddress());
+    await liqAmt.transferOwnership(master.getAddress());
     await btcb
       .connect(payerWallet)
-      .approve(master.address, ethers.utils.parseEther("9999999999999999"));
+      .approve(master.getAddress(), ethers.parseEther("9999999999999999"));
   });
 
   it("UNIT: Owner must be able to extend approve", async function () {
     await master.extendApprove(100);
     expect(
-      await amt.allowance(master.address, testLiqPoolAndRouter.address)
+      await amt.allowance(
+        master.getAddress(),
+        testLiqPoolAndRouter.getAddress()
+      )
     ).to.be.equal(100);
   });
 
@@ -97,7 +100,7 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 1000);
     await expect(
       master.connect(payerWallet).payRent(500, 0)
-    ).to.changeTokenBalance(btcb, master.address, 500);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 500);
   });
 
   it("UNIT: Payer wallet must not be able to execute pay rent without btcb", async function () {
@@ -149,15 +152,15 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(master.connect(tokenHolder1).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-666, 666]
     );
   });
@@ -170,15 +173,15 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(master.connect(tokenHolder1).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-666, 666]
     );
     await expect(master.connect(tokenHolder1).charge(1)).to.revertedWith(
@@ -197,15 +200,15 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(master.connect(tokenHolder1).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-666, 666]
     );
     await master.mintMaster(tokenHolder3.address, 20000);
@@ -222,30 +225,30 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 10000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(tokenHolder1).chargeFromTo(1, 3)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-999, 999]
     );
     await expect(
       master.connect(tokenHolder2).chargeFromTo(2, 3)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-1332, 1332]
     );
     await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-666, 666]
     );
   });
@@ -258,13 +261,13 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 10000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(tokenHolder1).chargeFromTo(1, 4)
     ).to.revertedWith("Select a valid snapshot range");
@@ -273,7 +276,7 @@ describe("Master", function () {
     ).to.revertedWith("Select a valid snapshot range");
     await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-666, 666]
     );
   });
@@ -286,13 +289,13 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 10000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await master.mintMaster(tokenHolder3.address, 20000);
     await expect(
       master.connect(tokenHolder3).chargeFromTo(1, 3)
@@ -309,42 +312,38 @@ describe("Master", function () {
 
     await amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
-    await expect(master.connect(tokenHolder1).addLiquidity(10000, 1000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, 100);
+    const liqTransaction = master
+      .connect(tokenHolder1)
+      .addLiquidity(10000, 1000);
 
-    await expect(master.connect(tokenHolder2).addLiquidity(5000, 500))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-5000, 5000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-500, 500]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, 50);
+    await expect(liqTransaction).to.changeTokenBalances(
+      amt,
+      [tokenHolder1.address, await testLiqPoolAndRouter.getAddress()],
+      [-10000, 10000]
+    );
+
+    await expect(liqTransaction).to.changeTokenBalances(
+      btcb,
+      [tokenHolder1.address, await testLiqPoolAndRouter.getAddress()],
+      [-1000, 1000]
+    );
+
+    await expect(liqTransaction).to.changeTokenBalance(
+      liqAmt,
+      tokenHolder1.address,
+      100
+    );
   });
 
   it("UNIT: addLiq require Not enough AMT", async function () {
@@ -357,16 +356,16 @@ describe("Master", function () {
 
     amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
     await expect(
       master.connect(tokenHolder1).addLiquidity(10001, 500)
@@ -383,16 +382,16 @@ describe("Master", function () {
 
     amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
     await expect(
       master.connect(tokenHolder1).addLiquidity(10000, 5001)
@@ -409,16 +408,16 @@ describe("Master", function () {
 
     amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
     await expect(
       master.connect(tokenHolder1).addLiquidity(0, 50)
@@ -435,16 +434,16 @@ describe("Master", function () {
 
     amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
     await expect(
       master.connect(tokenHolder1).addLiquidity(1000, 0)
@@ -461,83 +460,110 @@ describe("Master", function () {
 
     await amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
-    await expect(master.connect(tokenHolder1).addLiquidity(10000, 1000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, 100);
+    const liqTransaction = master
+      .connect(tokenHolder1)
+      .addLiquidity(10000, 1000);
 
-    await expect(master.connect(tokenHolder2).addLiquidity(5000, 500))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-5000, 5000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-500, 500]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, 50);
+    await expect(liqTransaction).to.changeTokenBalances(
+      amt,
+      [tokenHolder1.address, await testLiqPoolAndRouter.getAddress()],
+      [-10000, 10000]
+    );
+    await expect(liqTransaction).to.changeTokenBalances(
+      btcb,
+      [tokenHolder1.address, await testLiqPoolAndRouter.getAddress()],
+      [-1000, 1000]
+    );
+    await expect(liqTransaction).to.changeTokenBalance(
+      liqAmt,
+      tokenHolder1.address,
+      100
+    );
+
+    const liqTransaction2 = master
+      .connect(tokenHolder2)
+      .addLiquidity(5000, 500);
+
+    await expect(liqTransaction2).to.changeTokenBalances(
+      amt,
+      [tokenHolder2.address, await testLiqPoolAndRouter.getAddress()],
+      [-5000, 5000]
+    );
+    await expect(liqTransaction2).to.changeTokenBalances(
+      btcb,
+      [tokenHolder2.address, await testLiqPoolAndRouter.getAddress()],
+      [-500, 500]
+    );
+    await expect(liqTransaction2).to.changeTokenBalance(
+      liqAmt,
+      tokenHolder2.address,
+      50
+    );
 
     await liqAmt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("100000"));
+      .approve(master.getAddress(), ethers.parseEther("100000"));
 
     await liqAmt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("100000"));
+      .approve(master.getAddress(), ethers.parseEther("100000"));
     let lastTotalSupplyLiqAmt = await liqAmt.totalSupply();
-    await expect(master.connect(tokenHolder1).removeLiquidity(100))
-      .to.changeTokenBalances(
-        amt,
-        [master.address, tokenHolder1.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [master.address, tokenHolder1.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, -100);
-    expect(await liqAmt.totalSupply()).to.be.equal(
-      lastTotalSupplyLiqAmt.sub(100)
+
+    const removeLiqTransaction = master
+      .connect(tokenHolder1)
+      .removeLiquidity(100);
+
+    await expect(removeLiqTransaction).to.changeTokenBalances(
+      amt,
+      [await testLiqPoolAndRouter.getAddress(), tokenHolder1.address],
+      [-10000, 10000]
+    );
+    await expect(removeLiqTransaction).to.changeTokenBalances(
+      btcb,
+      [await testLiqPoolAndRouter.getAddress(), tokenHolder1.address],
+      [-1000, 1000]
+    );
+    await expect(removeLiqTransaction).to.changeTokenBalance(
+      liqAmt,
+      tokenHolder1.address,
+      -100
     );
 
-    lastTotalSupplyLiqAmt = await liqAmt.totalSupply();
-    await expect(master.connect(tokenHolder2).removeLiquidity(50))
-      .to.changeTokenBalances(
-        amt,
-        [master.address, tokenHolder2.address],
-        [-5000, 5000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [master.address, tokenHolder2.address],
-        [-500, 500]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, -50);
     expect(await liqAmt.totalSupply()).to.be.equal(
-      lastTotalSupplyLiqAmt.sub(50)
+      lastTotalSupplyLiqAmt - 100n
     );
+    lastTotalSupplyLiqAmt = await liqAmt.totalSupply();
+    const removeLiquidityTransaction2 = master
+      .connect(tokenHolder2)
+      .removeLiquidity(50);
+    await expect(removeLiquidityTransaction2).to.changeTokenBalances(
+      amt,
+      [await testLiqPoolAndRouter.getAddress(), tokenHolder2.address],
+      [-5000, 5000]
+    );
+    await expect(removeLiquidityTransaction2).to.changeTokenBalances(
+      btcb,
+      [await testLiqPoolAndRouter.getAddress(), tokenHolder2.address],
+      [-500, 500]
+    );
+    await expect(removeLiquidityTransaction2).to.changeTokenBalance(
+      liqAmt,
+      tokenHolder2.address,
+      -50
+    );
+
+    expect(await liqAmt.totalSupply()).to.be.equal(lastTotalSupplyLiqAmt - 50n);
   });
 
   it("UNIT: Token holders must not be able to remove liquidity via master without enougth liqAmt", async function () {
@@ -550,50 +576,28 @@ describe("Master", function () {
 
     await amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
-    await expect(master.connect(tokenHolder1).addLiquidity(10000, 1000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, 100);
+    await master.connect(tokenHolder1).addLiquidity(10000, 1000);
 
-    await expect(master.connect(tokenHolder2).addLiquidity(5000, 500))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-5000, 5000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-500, 500]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, 50);
+    await master.connect(tokenHolder2).addLiquidity(5000, 500);
 
     await liqAmt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("100000"));
+      .approve(master.getAddress(), ethers.parseEther("100000"));
 
     await liqAmt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("100000"));
+      .approve(master.getAddress(), ethers.parseEther("100000"));
 
     await expect(
       master.connect(tokenHolder1).removeLiquidity(101)
@@ -610,42 +614,20 @@ describe("Master", function () {
 
     await amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
-    await expect(master.connect(tokenHolder1).addLiquidity(10000, 1000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, 100);
+    await master.connect(tokenHolder1).addLiquidity(10000, 1000);
 
-    await expect(master.connect(tokenHolder2).addLiquidity(5000, 500))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-5000, 5000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-500, 500]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, 50);
+    await master.connect(tokenHolder2).addLiquidity(5000, 500);
 
     await btcb.transfer(payerWallet.address, 10000);
     await master.connect(payerWallet).payRent(1000, 0);
@@ -653,14 +635,14 @@ describe("Master", function () {
       master.connect(tokenHolder1).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(
       master.connect(tokenHolder2).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-166, 166]
     );
   });
@@ -675,42 +657,20 @@ describe("Master", function () {
 
     await amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
-    await expect(master.connect(tokenHolder1).addLiquidity(10000, 1000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, 100);
+    await master.connect(tokenHolder1).addLiquidity(10000, 1000);
 
-    await expect(master.connect(tokenHolder2).addLiquidity(5000, 500))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-5000, 5000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-500, 500]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, 50);
+    await master.connect(tokenHolder2).addLiquidity(5000, 500);
 
     await btcb.transfer(payerWallet.address, 10000);
     await master.connect(payerWallet).payRent(1000, 0);
@@ -718,14 +678,14 @@ describe("Master", function () {
       master.connect(tokenHolder1).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(
       master.connect(tokenHolder2).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-166, 166]
     );
     await expect(master.connect(tokenHolder1).liqCharge(1)).to.revertedWith(
@@ -751,74 +711,52 @@ describe("Master", function () {
 
     await amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
     await btcb.transfer(payerWallet.address, 10000);
 
-    await expect(master.connect(tokenHolder1).addLiquidity(10000, 1000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, 100);
+    await master.connect(tokenHolder1).addLiquidity(10000, 1000);
 
-    await expect(master.connect(tokenHolder2).addLiquidity(20000, 2000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-20000, 20000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-2000, 2000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, 200);
+    await master.connect(tokenHolder2).addLiquidity(20000, 2000);
 
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
 
     await expect(
       master.connect(tokenHolder1).liqChargeFromTo(1, 3)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-999, 999]
     );
     await expect(
       master.connect(tokenHolder2).liqChargeFromTo(2, 3)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-1332, 1332]
     );
     await expect(
       master.connect(tokenHolder2).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-666, 666]
     );
   });
@@ -834,54 +772,32 @@ describe("Master", function () {
 
     await amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
     await btcb.transfer(payerWallet.address, 10000);
 
-    await expect(master.connect(tokenHolder1).addLiquidity(10000, 1000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, 100);
+    await master.connect(tokenHolder1).addLiquidity(10000, 1000);
 
-    await expect(master.connect(tokenHolder2).addLiquidity(20000, 2000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-20000, 20000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-2000, 2000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, 200);
+    await master.connect(tokenHolder2).addLiquidity(20000, 2000);
 
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
 
     await expect(
       master.connect(tokenHolder1).liqChargeFromTo(1, 4)
@@ -893,7 +809,7 @@ describe("Master", function () {
       master.connect(tokenHolder2).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-666, 666]
     );
   });
@@ -909,77 +825,44 @@ describe("Master", function () {
 
     await amt
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder1)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await amt
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder2)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
     await btcb.transfer(payerWallet.address, 10000);
 
-    await expect(master.connect(tokenHolder1).addLiquidity(10000, 1000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-10000, 10000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder1.address, testLiqPoolAndRouter.address],
-        [-1000, 1000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder1.address, 100);
+    await master.connect(tokenHolder1).addLiquidity(10000, 1000);
 
-    await expect(master.connect(tokenHolder2).addLiquidity(20000, 2000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-20000, 20000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder2.address, testLiqPoolAndRouter.address],
-        [-2000, 2000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder2.address, 200);
+    await master.connect(tokenHolder2).addLiquidity(20000, 2000);
 
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
 
     await master.mintMaster(tokenHolder3.address, 20000);
     await btcb.transfer(tokenHolder3.address, 2000);
 
     await amt
       .connect(tokenHolder3)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
     await btcb
       .connect(tokenHolder3)
-      .approve(master.address, ethers.utils.parseEther("1000000"));
+      .approve(master.getAddress(), ethers.parseEther("1000000"));
 
-    await expect(master.connect(tokenHolder3).addLiquidity(20000, 2000))
-      .to.changeTokenBalances(
-        amt,
-        [tokenHolder3.address, testLiqPoolAndRouter.address],
-        [-20000, 20000]
-      )
-      .and.to.changeTokenBalances(
-        btcb,
-        [tokenHolder3.address, testLiqPoolAndRouter.address],
-        [-2000, 2000]
-      )
-      .and.to.changeTokenBalance(liqAmt, tokenHolder3.address, 200);
+    await master.connect(tokenHolder3).addLiquidity(20000, 2000);
 
     await expect(
       master.connect(tokenHolder3).liqChargeFromTo(1, 3)
@@ -989,114 +872,161 @@ describe("Master", function () {
       master.connect(tokenHolder1).liqChargeFromTo(1, 3)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-999, 999]
     );
     await expect(
       master.connect(tokenHolder2).liqChargeFromTo(2, 3)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-1332, 1332]
     );
     await expect(
       master.connect(tokenHolder2).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-666, 666]
     );
   });
 
   it("UNIT: Owner must be able to add liquidity locking", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
-    await expect(
-      await master.addLiquidityLocking(
-        100,
-        10,
-        owner.address,
-        60,
-        master.address
-      )
-    )
-      .to.changeTokenBalance(amt, owner.address, -100)
-      .and.to.changeTokenBalance(btcb, owner.address, -10)
-      .and.to.changeTokenBalance(liqAmt, await master.addrLiqLocker(), 100);
+    const lockingTransaction = master.addLiquidityLocking(
+      100,
+      10,
+      owner.address,
+      60,
+      master.getAddress()
+    );
+
+    await expect(lockingTransaction).to.changeTokenBalance(
+      amt,
+      owner.address,
+      -100
+    );
+    await expect(lockingTransaction).to.changeTokenBalance(
+      btcb,
+      owner.address,
+      -10
+    );
+    await expect(lockingTransaction).to.changeTokenBalance(
+      liqAmt,
+      await master.addrLiqLocker(),
+      100
+    );
   });
 
   it("UNIT: Owner must not be able to add liquidity locking twice", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
+
+    const liqLockingTransaction = master.addLiquidityLocking(
+      100,
+      10,
+      owner.address,
+      60,
+      master.getAddress()
+    );
+
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      amt,
+      owner.address,
+      -100
+    );
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      btcb,
+      owner.address,
+      -10
+    );
+
     await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
-    )
-      .to.changeTokenBalance(amt, owner.address, -100)
-      .and.to.changeTokenBalance(btcb, owner.address, -10);
-    await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+      master.addLiquidityLocking(
+        100,
+        10,
+        owner.address,
+        60,
+        master.getAddress()
+      )
     ).to.revertedWith("Liquidity already locked");
   });
 
   it("UNIT: Owner must not be able to add liquidity without enough amt", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
-    await amt.transfer(payerWallet.address, amt.balanceOf(owner.address));
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
+    await amt.transfer(payerWallet.address, await amt.balanceOf(owner.address));
     await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+      master.addLiquidityLocking(
+        100,
+        10,
+        owner.address,
+        60,
+        master.getAddress()
+      )
     ).to.revertedWith("Not enough AMT");
   });
 
   it("UNIT: Owner must not be able to add liquidity without enough btcb", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
-    await btcb.transfer(payerWallet.address, btcb.balanceOf(owner.address));
+    await btcb.transfer(
+      payerWallet.address,
+      await btcb.balanceOf(owner.address)
+    );
     await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
+      master.addLiquidityLocking(
+        100,
+        10,
+        owner.address,
+        60,
+        master.getAddress()
+      )
     ).to.revertedWith("Not enough BBTC");
   });
 
   it("UNIT: Owner must not be able to add liquidity with an amount of amt lesser than 2", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
-      master.addLiquidityLocking(1, 10, owner.address, 60, master.address)
+      master.addLiquidityLocking(1, 10, owner.address, 60, master.getAddress())
     ).to.revertedWith("AMT amount is too small");
   });
 
   it("UNIT: Owner must not be able to add liquidity with an amount of btcb lesser than 2", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
-      master.addLiquidityLocking(100, 1, owner.address, 60, master.address)
+      master.addLiquidityLocking(100, 1, owner.address, 60, master.getAddress())
     ).to.revertedWith("BTCB amount is too small");
   });
 
   it("UNIT: Liq locker must not be seted with zero address as beneficiary", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
-      master.addLiquidityLocking(100, 10, zeroAddress, 60, master.address)
+      master.addLiquidityLocking(100, 10, zeroAddress, 60, master.getAddress())
     ).to.revertedWith("Beneficiary must not be the zero address");
   });
 
   it("UNIT: Liq locker must not be seted with zero address as master", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
     await expect(
       master.addLiquidityLocking(100, 10, owner.address, 60, zeroAddress)
@@ -1105,14 +1035,28 @@ describe("Master", function () {
 
   it("UNIT: Owner must be able to charge from liquidity locked", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
-    await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 60, master.address)
-    )
-      .to.changeTokenBalance(amt, owner.address, -100)
-      .and.to.changeTokenBalance(btcb, owner.address, -10);
+
+    const liqLockingTransaction = master.addLiquidityLocking(
+      100,
+      10,
+      owner.address,
+      60,
+      master.getAddress()
+    );
+
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      amt,
+      owner.address,
+      -100
+    );
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      btcb,
+      owner.address,
+      -10
+    );
 
     const liqLockerAddress = await master.addrLiqLocker();
     const LiqLocker = await ethers.getContractFactory("liqLocker");
@@ -1120,7 +1064,7 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(liqLocker.charge(1)).to.changeTokenBalance(
       btcb,
       owner.address,
@@ -1134,14 +1078,28 @@ describe("Master", function () {
 
   it("UNIT: Owner must be able to release tokens after timelapse", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
-    await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
-    )
-      .to.changeTokenBalance(amt, owner.address, -100)
-      .and.to.changeTokenBalance(btcb, owner.address, -10);
+    const liqLockingTransaction = master.addLiquidityLocking(
+      100,
+      10,
+      owner.address,
+      6,
+      master.getAddress()
+    );
+
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      amt,
+      owner.address,
+      -100
+    );
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      btcb,
+      owner.address,
+      -10
+    );
+
     const liqLockerAddress = await master.addrLiqLocker();
     const LiqLocker = await ethers.getContractFactory("liqLocker");
     var liqLocker = LiqLocker.attach(liqLockerAddress) as LiqLocker;
@@ -1155,14 +1113,28 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to release tokens before timelapse", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
-    await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
-    )
-      .to.changeTokenBalance(amt, owner.address, -100)
-      .and.to.changeTokenBalance(btcb, owner.address, -10);
+    const liqLockingTransaction = master.addLiquidityLocking(
+      100,
+      10,
+      owner.address,
+      6,
+      master.getAddress()
+    );
+
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      amt,
+      owner.address,
+      -100
+    );
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      btcb,
+      owner.address,
+      -10
+    );
+
     const liqLockerAddress = await master.addrLiqLocker();
     const LiqLocker = await ethers.getContractFactory("liqLocker");
     var liqLocker = LiqLocker.attach(liqLockerAddress) as LiqLocker;
@@ -1174,14 +1146,27 @@ describe("Master", function () {
 
   it("UNIT: Owner must not be able to release tokens before timelapse if there are no tokens to release", async function () {
     const [owner, payerWallet, newPayerWallet] = await ethers.getSigners();
-    await amt.approve(master.address, 1000);
-    await btcb.approve(master.address, 1000);
+    await amt.approve(master.getAddress(), 1000);
+    await btcb.approve(master.getAddress(), 1000);
     await master.mintMaster(owner.address, 100);
-    await expect(
-      master.addLiquidityLocking(100, 10, owner.address, 6, master.address)
-    )
-      .to.changeTokenBalance(amt, owner.address, -100)
-      .and.to.changeTokenBalance(btcb, owner.address, -10);
+    const liqLockingTransaction = master.addLiquidityLocking(
+      100,
+      10,
+      owner.address,
+      6,
+      master.getAddress()
+    );
+
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      amt,
+      owner.address,
+      -100
+    );
+    await expect(liqLockingTransaction).to.changeTokenBalance(
+      btcb,
+      owner.address,
+      -10
+    );
     const liqLockerAddress = await master.addrLiqLocker();
     const LiqLocker = await ethers.getContractFactory("liqLocker");
     var liqLocker = LiqLocker.attach(liqLockerAddress) as LiqLocker;
@@ -1205,27 +1190,27 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 1000);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(master.connect(tokenHolder1).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-333, 333]
     );
 
     await expect(master.connect(tokenHolder3).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder3.address],
+      [await master.getAddress(), tokenHolder3.address],
       [-333, 333]
     );
 
     await expect(master.handleDust(1)).to.changeTokenBalances(
       btcb,
-      [master.address, owner.address],
+      [await master.getAddress(), owner.address],
       [-1, 1]
     );
   });
@@ -1239,21 +1224,21 @@ describe("Master", function () {
     await btcb.transfer(payerWallet.address, 1000);
     await expect(
       master.connect(payerWallet).payRent(999, 0)
-    ).to.changeTokenBalance(btcb, master.address, 999);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 999);
     await expect(master.connect(tokenHolder1).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(master.connect(tokenHolder2).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-333, 333]
     );
 
     await expect(master.connect(tokenHolder3).charge(1)).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder3.address],
+      [await master.getAddress(), tokenHolder3.address],
       [-333, 333]
     );
 
@@ -1273,33 +1258,33 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder2.address, 100);
     await btcb.transfer(tokenHolder3.address, 100);
 
-    await amt.connect(tokenHolder1).approve(master.address, 10000);
-    await btcb.connect(tokenHolder1).approve(master.address, 100);
+    await amt.connect(tokenHolder1).approve(master.getAddress(), 10000);
+    await btcb.connect(tokenHolder1).approve(master.getAddress(), 100);
 
-    await amt.connect(tokenHolder2).approve(master.address, 10000);
-    await btcb.connect(tokenHolder2).approve(master.address, 100);
+    await amt.connect(tokenHolder2).approve(master.getAddress(), 10000);
+    await btcb.connect(tokenHolder2).approve(master.getAddress(), 100);
 
-    await amt.connect(tokenHolder3).approve(master.address, 10000);
-    await btcb.connect(tokenHolder3).approve(master.address, 100);
+    await amt.connect(tokenHolder3).approve(master.getAddress(), 10000);
+    await btcb.connect(tokenHolder3).approve(master.getAddress(), 100);
 
     await master.connect(tokenHolder1).addLiquidity(10000, 100);
     await master.connect(tokenHolder2).addLiquidity(10000, 100);
     await master.connect(tokenHolder3).addLiquidity(10000, 100);
     await expect(
       master.connect(payerWallet).payRent(1000, 0)
-    ).to.changeTokenBalance(btcb, master.address, 1000);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 1000);
     await expect(
       master.connect(tokenHolder1).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(
       master.connect(tokenHolder2).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-333, 333]
     );
 
@@ -1307,13 +1292,13 @@ describe("Master", function () {
       master.connect(tokenHolder3).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder3.address],
+      [await master.getAddress(), tokenHolder3.address],
       [-333, 333]
     );
 
     await expect(master.LiqHandleDust(1)).to.changeTokenBalances(
       btcb,
-      [master.address, owner.address],
+      [await master.getAddress(), owner.address],
       [-1, 1]
     );
   });
@@ -1329,33 +1314,33 @@ describe("Master", function () {
     await btcb.transfer(tokenHolder2.address, 100);
     await btcb.transfer(tokenHolder3.address, 100);
 
-    await amt.connect(tokenHolder1).approve(master.address, 10000);
-    await btcb.connect(tokenHolder1).approve(master.address, 100);
+    await amt.connect(tokenHolder1).approve(master.getAddress(), 10000);
+    await btcb.connect(tokenHolder1).approve(master.getAddress(), 100);
 
-    await amt.connect(tokenHolder2).approve(master.address, 10000);
-    await btcb.connect(tokenHolder2).approve(master.address, 100);
+    await amt.connect(tokenHolder2).approve(master.getAddress(), 10000);
+    await btcb.connect(tokenHolder2).approve(master.getAddress(), 100);
 
-    await amt.connect(tokenHolder3).approve(master.address, 10000);
-    await btcb.connect(tokenHolder3).approve(master.address, 100);
+    await amt.connect(tokenHolder3).approve(master.getAddress(), 10000);
+    await btcb.connect(tokenHolder3).approve(master.getAddress(), 100);
 
     await master.connect(tokenHolder1).addLiquidity(10000, 100);
     await master.connect(tokenHolder2).addLiquidity(10000, 100);
     await master.connect(tokenHolder3).addLiquidity(10000, 100);
     await expect(
       master.connect(payerWallet).payRent(999, 0)
-    ).to.changeTokenBalance(btcb, master.address, 999);
+    ).to.changeTokenBalance(btcb, await master.getAddress(), 999);
     await expect(
       master.connect(tokenHolder1).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder1.address],
+      [await master.getAddress(), tokenHolder1.address],
       [-333, 333]
     );
     await expect(
       master.connect(tokenHolder2).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder2.address],
+      [await master.getAddress(), tokenHolder2.address],
       [-333, 333]
     );
 
@@ -1363,7 +1348,7 @@ describe("Master", function () {
       master.connect(tokenHolder3).liqCharge(1)
     ).to.changeTokenBalances(
       btcb,
-      [master.address, tokenHolder3.address],
+      [await master.getAddress(), tokenHolder3.address],
       [-333, 333]
     );
 

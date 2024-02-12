@@ -8,7 +8,7 @@ describe("LiqAmt", function () {
   this.beforeEach(async function () {
     const LiqAmt = await ethers.getContractFactory("LiquidityAmt");
     liqAmt = (await LiqAmt.deploy()) as Amt;
-    await liqAmt.deployed();
+    await liqAmt.waitForDeployment();
   });
 
   it("UNIT: Owner must be able to mint amt", async function () {
@@ -28,5 +28,15 @@ describe("LiqAmt", function () {
     await liqAmt.snapshot();
     await liqAmt.snapshot();
     expect(await liqAmt.getCurrentSnapshotId()).to.be.equal(4);
+  });
+
+  it("MODIFIERS: Only owner must be able to mint and create snapshot", async function () {
+    const [owner, addr1] = await ethers.getSigners();
+    await expect(liqAmt.connect(addr1).snapshot()).to.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(
+      liqAmt.connect(addr1).mint(addr1.address, ethers.parseEther("1"))
+    ).to.rejectedWith("Ownable: caller is not the owner");
   });
 });

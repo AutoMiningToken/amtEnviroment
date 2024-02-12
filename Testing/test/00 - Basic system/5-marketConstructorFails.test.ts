@@ -3,7 +3,6 @@ import chai from "chai";
 import { TestERC20 } from "../../typechain-types";
 import { Market } from "../../typechain-types";
 import { TestMaster } from "../../typechain-types";
-import { BigNumber } from "ethers";
 
 const { expect } = chai;
 
@@ -17,7 +16,7 @@ describe("Market constructor fail requires", function () {
     const [owner] = await ethers.getSigners();
     const Btcb = await ethers.getContractFactory("TestERC20");
     btcb = (await Btcb.deploy(1000000000, "Bitcoin", "BTCB")) as TestERC20;
-    await btcb.deployed();
+    await btcb.waitForDeployment();
 
     const Amt = await ethers.getContractFactory("TestERC20");
     amt = (await Amt.deploy(
@@ -25,15 +24,15 @@ describe("Market constructor fail requires", function () {
       "Auto Mining Token",
       "AMT"
     )) as TestERC20;
-    await amt.deployed();
+    await amt.waitForDeployment();
 
     const Usdt = await ethers.getContractFactory("TestERC20");
     usdt = (await Usdt.deploy(1000000000, "USDT Tether", "USDT")) as TestERC20;
-    await usdt.deployed();
+    await usdt.waitForDeployment();
 
     const MasterTrucho = await ethers.getContractFactory("TestMaster");
-    masterTrucho = (await MasterTrucho.deploy(btcb.address)) as TestMaster;
-    await masterTrucho.deployed();
+    masterTrucho = (await MasterTrucho.deploy(btcb.getAddress())) as TestMaster;
+    await masterTrucho.waitForDeployment();
   });
 
   it("Contract deployment may fail setting master address as zero address", async function () {
@@ -41,13 +40,13 @@ describe("Market constructor fail requires", function () {
     const Market = await ethers.getContractFactory("Market");
     expect(
       Market.deploy(
-        amt.address,
+        amt.getAddress(),
         zeroAddress,
         35,
         10,
         owner.address,
-        btcb.address,
-        usdt.address
+        btcb.getAddress(),
+        usdt.getAddress()
       )
     ).to.revertedWith("Can not set master to zero address");
   });
@@ -57,12 +56,12 @@ describe("Market constructor fail requires", function () {
     expect(
       Market.deploy(
         zeroAddress,
-        masterTrucho.address,
+        masterTrucho.getAddress(),
         35,
         10,
         owner.address,
-        btcb.address,
-        usdt.address
+        btcb.getAddress(),
+        usdt.getAddress()
       )
     ).to.revertedWith("Can not set amt to zero address");
   });

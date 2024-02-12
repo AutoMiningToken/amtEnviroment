@@ -11,12 +11,12 @@ import {
   TestERC20,
   TestLiqPoolAndRouter,
   WBNB,
-} from "../typechain-types";
-import { Amt } from "../typechain-types";
-import { BurnVault } from "../typechain-types";
+} from "../../typechain-types";
+import { Amt } from "../../typechain-types";
+import { BurnVault } from "../../typechain-types";
 import fs from "fs";
-import { Oracle } from "../typechain-types";
-import contractAddresses from "../Addresses/contractAddresses";
+import { Oracle } from "../../typechain-types";
+import contractAddresses from "../../Addresses/contractAddresses";
 import { BigNumber as nativeBigNumber } from "bignumber.js";
 import { Networkish } from "ethers";
 
@@ -28,8 +28,8 @@ const setInitialState = require("../../scripts/setInitialState");
 const deployOracles = require("../../scripts/deployOracles");
 describe("Tests of price feeder contract", function () {
   //This values need to be updated to work
-  const btcbPrice = 47500;
-  const amtPrice = "0.51";
+  const btcbPrice = 49000;
+  const amtPrice = "0.54";
 
   let priceFeeder: PriceFeeder;
   let factory: PancakeFactory;
@@ -271,13 +271,13 @@ describe("Tests of price feeder contract", function () {
     );
     const amtPoolBalance = await amt.balanceOf(pairAddress);
     const btcbPoolBalance = await btcb.balanceOf(pairAddress);
-    console.log(
-      "This data: " + (await priceFeeder.getPrice(amtPoolBalance * 10n))
-    );
-    console.log("BTCB pool balance x price: " + btcbPoolBalance * btcbPrice);
     expect(await priceFeeder.getPrice(amtPoolBalance * 10n)).to.be.closeTo(
       btcbPoolBalance * btcbPrice,
       (btcbPoolBalance * btcbPrice * 100n) / 99n // 10% margin to total BTCB balance of pool
     );
+  });
+
+  it("UNIT: Price feeder getPrice must revert with amountIn equal to zero", async function () {
+    await expect(priceFeeder.getPrice(0)).to.revertedWith("Invalid amountIn");
   });
 });

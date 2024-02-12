@@ -8,7 +8,6 @@ import {
 } from "../typechain-types";
 import { Amt } from "../typechain-types";
 import { BurnVault } from "../typechain-types";
-import { BigNumber } from "ethers";
 const { expect } = chai;
 
 describe("Intensive dust collection", function () {
@@ -22,31 +21,31 @@ describe("Intensive dust collection", function () {
 
   const amountOfRepetitions = 50;
   const amountOfWalletsTouse = 100;
-  const maxPayment = ethers.utils.parseEther("1"); //Max payment of 1 BTC
+  const maxPayment = ethers.parseEther("1"); //Max payment of 1 BTC
   this.beforeEach(async function () {
     const [owner, payerWallet, addr2, addr3, addr4, addr5] =
       await ethers.getSigners();
 
     const Btcb = await ethers.getContractFactory("TestERC20");
     btcb = (await Btcb.deploy(
-      ethers.utils.parseEther("21000000"),
+      ethers.parseEther("21000000"),
       "Bitcoin",
       "BTCB"
     )) as TestERC20;
-    await btcb.deployed();
+    await btcb.waitForDeployment();
 
     const Amt = await ethers.getContractFactory("Amt");
     amt = (await Amt.deploy()) as Amt;
-    await amt.deployed();
+    await amt.waitForDeployment();
 
     const LiqAmt = await ethers.getContractFactory("LiquidityAmt");
     liqAmt = (await LiqAmt.deploy()) as LiquidityAmt;
-    await liqAmt.deployed();
+    await liqAmt.waitForDeployment();
 
     const BurnVault = await ethers.getContractFactory("BurnVault");
     burnVault = (await BurnVault.deploy(
-      amt.address,
-      btcb.address
+      amt.getAddress(),
+      btcb.getAddress()
     )) as BurnVault;
 
     const TestLiqPoolAndRouter = await ethers.getContractFactory(
@@ -57,35 +56,29 @@ describe("Intensive dust collection", function () {
     )) as TestLiqPoolAndRouter;
     const Master = await ethers.getContractFactory("Master");
     master = (await Master.deploy(
-      amt.address,
-      btcb.address,
-      burnVault.address,
-      liqAmt.address,
-      payerWallet.address,
-      testLiqPoolAndRouter.address
+      amt.getAddress(),
+      btcb.getAddress(),
+      burnVault.getAddress(),
+      liqAmt.getAddress(),
+      payerWallet.getAddress(),
+      testLiqPoolAndRouter.getAddress()
     )) as Master;
-    await master.deployed();
+    await master.waitForDeployment();
 
-    await amt.transferOwnership(master.address);
-    await liqAmt.transferOwnership(master.address);
+    await amt.transferOwnership(master.getAddress());
+    await liqAmt.transferOwnership(master.getAddress());
     await btcb
       .connect(payerWallet)
-      .approve(master.address, ethers.utils.parseEther("9999999999999999"));
+      .approve(master.getAddress(), ethers.parseEther("9999999999999999"));
 
-    await master.mintMaster(
-      owner.address,
-      ethers.utils.parseEther("100000000")
-    );
+    await master.mintMaster(owner.address, ethers.parseEther("100000000"));
   });
 
-  function getRandomBigInt(min: BigNumber, max: BigNumber): BigNumber {
+  function getRandomBigInt(min: bigint, max: bigint): bigint {
     const randomFloat = Math.random();
-    const range = max.sub(min);
-    const scalingFactor = min.add(
-      range
-        .mul(BigNumber.from(Math.floor(randomFloat * 1e6)))
-        .div(BigNumber.from(1e6))
-    );
+    const range = max - min;
+    const scalingFactor =
+      min + (range * BigInt(Math.floor(randomFloat * 1e6))) / BigInt(1e6);
     return scalingFactor;
   }
   it("Intensive dust collection", async function () {
@@ -94,13 +87,13 @@ describe("Intensive dust collection", function () {
     const owner = wallets[0];
     const payerWallet = wallets[1];
     for (let i = 0; i < amountOfRepetitions; i++) {
-      let toPay = getRandomBigInt(BigNumber.from(0), maxPayment);
+      let toPay = getRandomBigInt(0n, maxPayment);
 
       //Distribution for specific payment
       for (let j = 2; j < amountOfWalletsTouse; j++) {
         const amountToTransfer = getRandomBigInt(
-          BigNumber.from(0),
-          ethers.utils.parseEther("1") // Use small values to try to generate dust
+          0n,
+          ethers.parseEther("1") // Use small values to try to generate dust
         );
         await amt.transfer(wallets[j].address, amountToTransfer);
       }
@@ -120,7 +113,10 @@ describe("Intensive dust collection", function () {
           .transfer(owner.address, await amt.balanceOf(wallets[j].address));
       }
       console.log(
-        "Potential dust on " + i + " " + (await btcb.balanceOf(master.address))
+        "Potential dust on " +
+          i +
+          " " +
+          (await btcb.balanceOf(master.getAddress()))
       );
     }
 
@@ -131,6 +127,6 @@ describe("Intensive dust collection", function () {
       } catch {}
     }
     //Final check if all dust were collected
-    expect(await btcb.balanceOf(master.address)).to.be.equal(0);
+    expect(await btcb.balanceOf(master.getAddress())).to.be.equal(0);
   });
 });

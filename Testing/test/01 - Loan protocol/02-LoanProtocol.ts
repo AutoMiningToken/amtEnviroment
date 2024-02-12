@@ -160,33 +160,6 @@ describe("Test of loan protocol", function () {
     }
   }
 
-  it("CHECK ENVIROMENT: Testing pancake contracts: Excepting good behaviour of router, factory and tokens", async function () {
-    const wallets = await ethers.getSigners();
-    const owner = wallets[0];
-    const usdt_btcb_pair = await factory.getPair(
-      btcb.getAddress(),
-      usdt.getAddress()
-    );
-    const amt_btcb_pair = await factory.getPair(
-      amt.getAddress(),
-      btcb.getAddress()
-    );
-
-    console.log("STARTING TEST WITH INITIAL STATE....");
-    console.log("BTCB Price: ");
-    const btcbPrice = await priceFeeder.getLatestBTCBPrice();
-    console.log(btcbPrice);
-    console.log("-----------------------------");
-    console.log("AMT Price on USDT: ");
-    const amtPrice =
-      (await router.getAmountOut(
-        ethers.parseEther("1"),
-        await amt.balanceOf(amt_btcb_pair),
-        await btcb.balanceOf(amt_btcb_pair)
-      )) * btcbPrice;
-    console.log(ethers.formatEther(amtPrice));
-  });
-
   it("UNIT: Owner must be able to set a new price feeder", async function () {
     const wallets = await ethers.getSigners();
     const owner = wallets[0];

@@ -25,20 +25,20 @@ describe("Master constructor fail requires", function () {
 
     const Btcb = await ethers.getContractFactory("TestERC20");
     btcb = (await Btcb.deploy(1000000000, "Bitcoin", "BTCB")) as TestERC20;
-    await btcb.deployed();
+    await btcb.waitForDeployment();
 
     const Amt = await ethers.getContractFactory("Amt");
     amt = (await Amt.deploy()) as Amt;
-    await amt.deployed();
+    await amt.waitForDeployment();
 
     const LiqAmt = await ethers.getContractFactory("LiquidityAmt");
     liqAmt = (await LiqAmt.deploy()) as LiquidityAmt;
-    await liqAmt.deployed();
+    await liqAmt.waitForDeployment();
 
     const BurnVault = await ethers.getContractFactory("BurnVault");
     burnVault = (await BurnVault.deploy(
-      amt.address,
-      btcb.address
+      amt.getAddress(),
+      btcb.getAddress()
     )) as BurnVault;
 
     const TestLiqPoolAndRouter = await ethers.getContractFactory(
@@ -49,14 +49,14 @@ describe("Master constructor fail requires", function () {
     )) as TestLiqPoolAndRouter;
     const Master = await ethers.getContractFactory("Master");
     master = (await Master.deploy(
-      amt.address,
-      btcb.address,
-      burnVault.address,
-      liqAmt.address,
+      amt.getAddress(),
+      btcb.getAddress(),
+      burnVault.getAddress(),
+      liqAmt.getAddress(),
       payerWallet.address,
-      testLiqPoolAndRouter.address
+      testLiqPoolAndRouter.getAddress()
     )) as Master;
-    await master.deployed();
+    await master.waitForDeployment();
   });
 
   it("UNIT: all deployment fails as zero address cases", async function () {
@@ -66,44 +66,44 @@ describe("Master constructor fail requires", function () {
     await expect(
       Master.deploy(
         zeroAddress,
-        btcb.address,
-        burnVault.address,
-        liqAmt.address,
+        btcb.getAddress(),
+        burnVault.getAddress(),
+        liqAmt.getAddress(),
         payerWallet.address,
-        testLiqPoolAndRouter.address
+        testLiqPoolAndRouter.getAddress()
       )
     ).to.revertedWith("Amt must not be the zero address");
 
     await expect(
       Master.deploy(
-        amt.address,
-        btcb.address,
+        amt.getAddress(),
+        btcb.getAddress(),
         zeroAddress,
-        liqAmt.address,
+        liqAmt.getAddress(),
         payerWallet.address,
-        testLiqPoolAndRouter.address
+        testLiqPoolAndRouter.getAddress()
       )
     ).to.revertedWith("Vault must not be the zero address");
 
     await expect(
       Master.deploy(
-        amt.address,
-        btcb.address,
-        burnVault.address,
+        amt.getAddress(),
+        btcb.getAddress(),
+        burnVault.getAddress(),
         zeroAddress,
         payerWallet.address,
-        testLiqPoolAndRouter.address
+        testLiqPoolAndRouter.getAddress()
       )
     ).to.revertedWith("LiqToken must not be the zero address");
 
     await expect(
       Master.deploy(
-        amt.address,
-        btcb.address,
-        burnVault.address,
-        liqAmt.address,
+        amt.getAddress(),
+        btcb.getAddress(),
+        burnVault.getAddress(),
+        liqAmt.getAddress(),
         zeroAddress,
-        testLiqPoolAndRouter.address
+        testLiqPoolAndRouter.getAddress()
       )
     ).to.revertedWith("PayerWallet must not be the zero address");
   });

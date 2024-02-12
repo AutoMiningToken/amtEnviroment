@@ -16,32 +16,32 @@ describe("burnVault", function () {
 
     const Btcb = await ethers.getContractFactory("TestERC20");
     btcb = (await Btcb.deploy(1000000000, "Bitcoin", "BTC")) as TestERC20;
-    await btcb.deployed();
+    await btcb.waitForDeployment();
 
     const Amt = await ethers.getContractFactory("Amt");
     amt = (await Amt.deploy()) as Amt;
-    await amt.deployed();
+    await amt.waitForDeployment();
 
     await amt.mint(owner.address, 100);
 
     const BurnVault = await ethers.getContractFactory("BurnVault");
     burnVault = (await BurnVault.deploy(
-      amt.address,
-      btcb.address
+      amt.getAddress(),
+      btcb.getAddress()
     )) as BurnVault;
 
     //Allowances
-    await amt.connect(addr1).approve(burnVault.address, "999999999999");
-    await amt.connect(addr2).approve(burnVault.address, "999999999999");
-    await amt.connect(addr3).approve(burnVault.address, "999999999999");
-    await amt.connect(addr4).approve(burnVault.address, "999999999999");
-    await amt.connect(addr5).approve(burnVault.address, "999999999999");
+    await amt.connect(addr1).approve(burnVault.getAddress(), "999999999999");
+    await amt.connect(addr2).approve(burnVault.getAddress(), "999999999999");
+    await amt.connect(addr3).approve(burnVault.getAddress(), "999999999999");
+    await amt.connect(addr4).approve(burnVault.getAddress(), "999999999999");
+    await amt.connect(addr5).approve(burnVault.getAddress(), "999999999999");
   });
 
   it("UNIT: backing withdrawl", async function () {
     const [owner, addr1] = await ethers.getSigners();
     await amt.transfer(addr1.address, 10);
-    await btcb.transfer(burnVault.address, 100);
+    await btcb.transfer(burnVault.getAddress(), 100);
     await expect(
       burnVault.connect(addr1).backingWithdraw(10)
     ).to.changeTokenBalance(btcb, addr1.address, 10);
@@ -65,7 +65,7 @@ describe("burnVault", function () {
   it("UNIT: backing withdrawl must emit event with correct arguments", async function () {
     const [owner, addr1] = await ethers.getSigners();
     await amt.transfer(addr1.address, 10);
-    await btcb.transfer(burnVault.address, 100);
+    await btcb.transfer(burnVault.getAddress(), 100);
     await expect(burnVault.connect(addr1).backingWithdraw(10))
       .to.emit(burnVault, "burnMade")
       .withArgs(10, 10);
@@ -81,7 +81,7 @@ describe("burnVault", function () {
     await amt.transfer(addr4.address, 20);
     await amt.transfer(addr5.address, 40);
 
-    await btcb.transfer(burnVault.address, 100);
+    await btcb.transfer(burnVault.getAddress(), 100);
 
     await expect(
       burnVault.connect(addr1).backingWithdraw(10)

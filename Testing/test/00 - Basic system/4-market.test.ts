@@ -3,7 +3,6 @@ import chai from "chai";
 import { TestERC20 } from "../../typechain-types";
 import { Market } from "../../typechain-types";
 import { TestMaster } from "../../typechain-types";
-import { BigNumber } from "ethers";
 
 const { expect } = chai;
 
@@ -17,7 +16,7 @@ describe("Market", function () {
     const [owner] = await ethers.getSigners();
     const Btcb = await ethers.getContractFactory("TestERC20");
     btcb = (await Btcb.deploy(1000000000, "Bitcoin", "BTCB")) as TestERC20;
-    await btcb.deployed();
+    await btcb.waitForDeployment();
 
     const Amt = await ethers.getContractFactory("TestERC20");
     amt = (await Amt.deploy(
@@ -25,25 +24,25 @@ describe("Market", function () {
       "Auto Mining Token",
       "AMT"
     )) as TestERC20;
-    await amt.deployed();
+    await amt.waitForDeployment();
 
     const Usdt = await ethers.getContractFactory("TestERC20");
     usdt = (await Usdt.deploy(1000000000, "USDT Tether", "USDT")) as TestERC20;
-    await usdt.deployed();
+    await usdt.waitForDeployment();
 
     const MasterTrucho = await ethers.getContractFactory("TestMaster");
-    masterTrucho = (await MasterTrucho.deploy(btcb.address)) as TestMaster;
-    await masterTrucho.deployed();
+    masterTrucho = (await MasterTrucho.deploy(btcb.getAddress())) as TestMaster;
+    await masterTrucho.waitForDeployment();
 
     const Market = await ethers.getContractFactory("Market");
     market = (await Market.deploy(
-      amt.address,
-      masterTrucho.address,
+      amt.getAddress(),
+      masterTrucho.getAddress(),
       35,
       10,
       owner.address,
-      btcb.address,
-      usdt.address
+      btcb.getAddress(),
+      usdt.getAddress()
     )) as Market;
   });
 
@@ -75,23 +74,22 @@ describe("Market", function () {
     const [owner, user] = await ethers.getSigners();
 
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 1000000);
-    await amt.transfer(market.address, 2857 * 2); //Border case emptying the market
+    await usdt.transfer(market.getAddress(), 1000000);
+    await amt.transfer(market.getAddress(), 2857 * 2); //Border case emptying the market
 
     //Send tokens to user to be able to buy
     await usdt.transfer(user.address, 2000);
 
     //User approve usdt to be expended by market
-    await usdt.connect(user).approve(market.address, 100000);
+    await usdt.connect(user).approve(market.getAddress(), 100000);
 
-    const usdtToSend = BigNumber.from(1000);
-    const expectedAmtToRecive = usdtToSend
-      .mul(100)
-      .div(await market.usdPer100Amt());
+    const usdtToSend = 1000n;
+    const expectedAmtToRecive =
+      (usdtToSend * 100n) / (await market.usdPer100Amt());
 
     await expect(market.connect(user).buy(usdtToSend)).to.changeTokenBalances(
       amt,
-      [user.address, market.address],
+      [user.address, await market.getAddress()],
       [expectedAmtToRecive, -expectedAmtToRecive]
     );
     await expect(market.connect(user).buy(usdtToSend)).to.changeTokenBalances(
@@ -105,19 +103,18 @@ describe("Market", function () {
     const [owner, user] = await ethers.getSigners();
 
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 1000000);
-    await amt.transfer(market.address, 1000000);
+    await usdt.transfer(market.getAddress(), 1000000);
+    await amt.transfer(market.getAddress(), 1000000);
 
     //Send tokens to user to be able to buy
     await usdt.transfer(user.address, 1000);
 
     //User approve usdt to be expended by market
-    await usdt.connect(user).approve(market.address, 100000);
+    await usdt.connect(user).approve(market.getAddress(), 100000);
 
-    const usdtToSend = BigNumber.from(1001);
-    const expectedAmtToRecive = usdtToSend
-      .mul(100)
-      .div(await market.usdPer100Amt());
+    const usdtToSend = 1001n;
+    const expectedAmtToRecive =
+      (usdtToSend * 100n) / (await market.usdPer100Amt());
 
     await expect(market.connect(user).buy(usdtToSend)).to.revertedWith(
       "User doesn't have enough USDT"
@@ -128,19 +125,18 @@ describe("Market", function () {
     const [owner, user] = await ethers.getSigners();
 
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 1000000);
-    await amt.transfer(market.address, 100);
+    await usdt.transfer(market.getAddress(), 1000000);
+    await amt.transfer(market.getAddress(), 100);
 
     //Send tokens to user to be able to buy
     await usdt.transfer(user.address, 1000);
 
     //User approve usdt to be expended by market
-    await usdt.connect(user).approve(market.address, 100000);
+    await usdt.connect(user).approve(market.getAddress(), 100000);
 
-    const usdtToSend = BigNumber.from(1000);
-    const expectedAmtToRecive = usdtToSend
-      .mul(100)
-      .div(await market.usdPer100Amt());
+    const usdtToSend = 1000n;
+    const expectedAmtToRecive =
+      (usdtToSend * 100n) / (await market.usdPer100Amt());
 
     await expect(market.connect(user).buy(usdtToSend)).to.revertedWith(
       "Market doesn't have enough AMT"
@@ -151,19 +147,18 @@ describe("Market", function () {
     const [owner, user] = await ethers.getSigners();
 
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 1000000);
-    await amt.transfer(market.address, 1000000);
+    await usdt.transfer(market.getAddress(), 1000000);
+    await amt.transfer(market.getAddress(), 1000000);
 
     //Send tokens to user to be able to buy
     await usdt.transfer(user.address, 1000);
 
     //User approve usdt to be expended by market
-    await usdt.connect(user).approve(market.address, 100000);
+    await usdt.connect(user).approve(market.getAddress(), 100000);
 
-    const usdtToSend = BigNumber.from(1000);
-    const expectedAmtToRecive = usdtToSend
-      .mul(100)
-      .div(await market.usdPer100Amt());
+    const usdtToSend = 1000n;
+    const expectedAmtToRecive =
+      (usdtToSend * 100n) / (await market.usdPer100Amt());
 
     await expect(market.connect(user).buy(usdtToSend))
       .to.emit(market, "amtBought")
@@ -173,24 +168,21 @@ describe("Market", function () {
   it("User should be able to sell at defined rate paying the fee", async function () {
     const [owner, user] = await ethers.getSigners();
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 1000000);
-    await amt.transfer(market.address, 1000000);
+    await usdt.transfer(market.getAddress(), 1000000);
+    await amt.transfer(market.getAddress(), 1000000);
 
     //Send tokens to user to be able to sell
     await amt.transfer(user.address, 10000);
 
     //User approve amt to be expended by market
-    await amt.connect(user).approve(market.address, 100000);
+    await amt.connect(user).approve(market.getAddress(), 100000);
 
-    const amtToSend = BigNumber.from(100);
-    const expectedUsdtToRecive = amtToSend
-      .mul(35)
-      .div(100)
-      .mul(1000 - 10)
-      .div(1000);
+    const amtToSend = 100n;
+    const expectedUsdtToRecive =
+      (((amtToSend * 35n) / 100n) * (1000n - 10n)) / 1000n;
     await expect(market.connect(user).sell(amtToSend)).to.changeTokenBalances(
       usdt,
-      [user.address, market.address],
+      [user.address, await market.getAddress()],
       [expectedUsdtToRecive, -expectedUsdtToRecive]
     );
     await expect(market.connect(user).sell(amtToSend)).to.changeTokenBalances(
@@ -203,21 +195,18 @@ describe("Market", function () {
   it("User must not be able to buy with not enough amt ", async function () {
     const [owner, user] = await ethers.getSigners();
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 1000000);
-    await amt.transfer(market.address, 1000000);
+    await usdt.transfer(market.getAddress(), 1000000);
+    await amt.transfer(market.getAddress(), 1000000);
 
     //Send tokens to user to be able to sell
     await amt.transfer(user.address, 10000);
 
     //User approve amt to be expended by market
-    await amt.connect(user).approve(market.address, 100000);
+    await amt.connect(user).approve(market.getAddress(), 100000);
 
-    const amtToSend = BigNumber.from(10001);
-    const expectedUsdtToRecive = amtToSend
-      .mul(35)
-      .div(100)
-      .mul(1000 - 10)
-      .div(1000);
+    const amtToSend = 10001n;
+    const expectedUsdtToRecive =
+      (((amtToSend * 35n) / 100n) * (1000n - 10n)) / 1000n;
     await expect(market.connect(user).sell(amtToSend)).to.revertedWith(
       "User doesn't have enough AMT"
     );
@@ -226,21 +215,17 @@ describe("Market", function () {
   it("User must not be able to recive more usdt than the market usdt balance", async function () {
     const [owner, user] = await ethers.getSigners();
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 100);
-    await amt.transfer(market.address, 1000000);
+    await usdt.transfer(market.getAddress(), 100);
+    await amt.transfer(market.getAddress(), 1000000);
 
     //Send tokens to user to be able to sell
     await amt.transfer(user.address, 10000);
 
     //User approve amt to be expended by market
-    await amt.connect(user).approve(market.address, 100000);
+    await amt.connect(user).approve(market.getAddress(), 100000);
 
-    const amtToSend = BigNumber.from(10000);
-    const expectedUsdtToRecive = amtToSend
-      .mul(35)
-      .div(100)
-      .mul(1000 - 10)
-      .div(1000);
+    const amtToSend = 10000n;
+
     await expect(market.connect(user).sell(amtToSend)).to.revertedWith(
       "Market doesn't have enough USDT"
     );
@@ -249,21 +234,18 @@ describe("Market", function () {
   it("Buy function must emmit event with correct params", async function () {
     const [owner, user] = await ethers.getSigners();
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 1000000);
-    await amt.transfer(market.address, 1000000);
+    await usdt.transfer(market.getAddress(), 1000000);
+    await amt.transfer(market.getAddress(), 1000000);
 
     //Send tokens to user to be able to sell
     await amt.transfer(user.address, 10000);
 
     //User approve amt to be expended by market
-    await amt.connect(user).approve(market.address, 100000);
+    await amt.connect(user).approve(market.getAddress(), 100000);
 
-    const amtToSend = BigNumber.from(100);
-    const expectedUsdtToRecive = amtToSend
-      .mul(35)
-      .div(100)
-      .mul(1000 - 10)
-      .div(1000);
+    const amtToSend = 100n;
+    const expectedUsdtToRecive =
+      (((amtToSend * 35n) / 100n) * (1000n - 10n)) / 1000n;
     await expect(market.connect(user).sell(amtToSend))
       .to.emit(market, "userSold")
       .withArgs(expectedUsdtToRecive, amtToSend);
@@ -272,7 +254,7 @@ describe("Market", function () {
   it("Admin must recive charged btcb", async function () {
     const [owner, user] = await ethers.getSigners();
     //Send tokens to master to be able to charge
-    await btcb.transfer(masterTrucho.address, 1000);
+    await btcb.transfer(masterTrucho.getAddress(), 1000);
 
     const prevBtcbBalance = await btcb.balanceOf(owner.address);
     await market.charge(1);
@@ -284,8 +266,8 @@ describe("Market", function () {
   it("WithdrawAll must empty the market and send every token to the owner", async function () {
     const [owner, user] = await ethers.getSigners();
     //Send tokens to market to be able to execute exchanges
-    await usdt.transfer(market.address, 1000000);
-    await amt.transfer(market.address, 1000000);
+    await usdt.transfer(market.getAddress(), 1000000);
+    await amt.transfer(market.getAddress(), 1000000);
 
     const prevAmtBalance = await amt.balanceOf(owner.address);
     const prevUsdtBalance = await usdt.balanceOf(owner.address);
@@ -293,12 +275,28 @@ describe("Market", function () {
     const transaction = await market.withdrawAll();
     await transaction.wait();
     expect(await amt.balanceOf(owner.address)).to.be.equal(
-      prevAmtBalance.add(1000000)
+      prevAmtBalance + 1000000n
     );
     expect(await usdt.balanceOf(owner.address)).to.be.equal(
-      prevUsdtBalance.add(1000000)
+      prevUsdtBalance + 1000000n
     );
-    expect(await amt.balanceOf(market.address)).to.be.equal(0);
-    expect(await usdt.balanceOf(market.address)).to.be.equal(0);
+    expect(await amt.balanceOf(market.getAddress())).to.be.equal(0);
+    expect(await usdt.balanceOf(market.getAddress())).to.be.equal(0);
+  });
+
+  it("MODIFIERS: operations with only owner", async function () {
+    const [owner, user] = await ethers.getSigners();
+    await expect(market.connect(user).setRate(25)).to.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(market.connect(user).setFee(25)).to.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(market.connect(user).charge(0)).to.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(market.connect(user).withdrawAll()).to.revertedWith(
+      "Ownable: caller is not the owner"
+    );
   });
 });
