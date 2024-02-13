@@ -15,6 +15,6 @@
     "dotenv": "^16.3.1"
   },
   "scripts": {
-    "postinstall": "patch -p0 -d node_modules/@uniswap/lib/contracts/libraries < ../patches/FixedPoint.patch || true"
+    "postinstall": "node ../apply-patch.js"
   }
 }
