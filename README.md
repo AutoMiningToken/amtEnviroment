@@ -27,33 +27,36 @@ The project is structured into two main directories: `Production` and `Testing`.
 
 ### Setup
 
-1. Navigate to the `Production` folder and install dependencies:
+1. Prepare the Production Environment:
+
+- Navigate to the Production directory and install the necessary dependencies with the following commands:
 
 ```bash
 cd Production
 npm install
 ```
 
-2. Apply the `fixedPoint.patch` to ensure compatibility and proper functionality inside `Production`:
+2. Apply the fixedPoint.patch for Compatibility:
+
+- The npm install command triggers the execution of the postinstall script, apply-patch.js, which applies the patch command to ensure compatibility with the FixedPoint.sol library. If this process fails, you can manually execute the script by running:
 
 ```bash
-cd node_modules/@uniswap/lib/contracts/libraries
-patch <  ../../../../../../patches/fixedPoint.patch
+npm run postinstall
 ```
 
-3. Repeat the installation process for the Testing environment:
+- In environments that do not support the patch command, you may need to manually adjust the file. Please refer to the corresponding section for guidance.
+
+1. Set Up the Testing Environment::
+
+- Repeat the installation process in the Testing directory to prepare your testing environment:
 
 ```bash
 cd Testing
 npm install
 ```
 
-4. Apply the `fixedPoint.patch` to ensure compatibility and proper functionality inside `Testing`:
-
-```bash
-cd node_modules/@uniswap/lib/contracts/libraries
-patch <  ../../../../../../patches/fixedPoint.patch
-```
+4. Ensure Patch Application for Testing:
+   - Similar to the production setup, confirm that the fixedPoint.patch has been successfully applied to maintain functionality in the testing environment.
 
 #### Manual File Replacement (Alternative Method to apply patch)
 
