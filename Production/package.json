@@ -13,5 +13,8 @@
     "@uniswap/v2-core": "^1.0.1",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "dotenv": "^16.3.1"
+  },
+  "scripts": {
+    "postinstall": "patch -p0 -d node_modules/@uniswap/lib/contracts/libraries < ../patches/FixedPoint.patch || true"
   }
 }
