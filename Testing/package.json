@@ -20,6 +20,6 @@
     "test:local": "node scripts/testSetUp/prepareTestEnviroment.js 3c96aa5190ff88a7216ba45b8da1bdb346ea9366dad9db8e2b3139d0eb777eb6 && npx hardhat test",
     "test:coverage": "node scripts/testSetUp/prepareTestEnviroment.js f13b90c06e2519cfd6611b9a488e9d0e7684cb08f14c0d8119e15f8cd60618fe && npx hardhat coverage",
     "test:fork": "node scripts/testSetUp/prepareTestEnviroment.js 00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5 && npx hardhat test --config ./hardhat.config.fork.ts",
-    "postinstall": "node ../apply-patch.js"
+    "postinstall": "node ./apply-patch.js"
   }
 }
