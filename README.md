@@ -112,7 +112,7 @@ Note: Exact price precision is not mandatory, as the test includes a tolerance m
 Finding Current Prices: You can easily obtain the latest prices for BTCB and AMT from the following sources:
 
 1. [BTCB PRICE](https://coinmarketcap.com/currencies/bitcoin/).
-2. [AMT PRICE](https://coinmarketcap.com/dexscan/bsc/0x66cd75f1938e4f287f70f49b295207e9363f6a68/).
+2. [AMT PRICE](https://poocoin.app/tokens/0x6ae0a238a6f51df8eee084b1756a54dd8a8e85d3).
 
 ## Custom test commands
 
