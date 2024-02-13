@@ -4,7 +4,6 @@ const path = require("path");
 const patchFilePath = path.join(__dirname, "..", "patches", "FixedPoint.patch");
 const targetDirectory = path.join(
   __dirname,
-  "..",
   "node_modules",
   "@uniswap",
   "lib",
