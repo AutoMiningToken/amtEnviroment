@@ -4,6 +4,17 @@
 
 The Price Feeder contract provides price feed functionality for AMT-BTCB in USDT, utilizing Chainlink oracles for USDT-BTCB price data and a custom Oracle for AMT-BTCB price data based on Uniswap V2 TWAP.
 
+## Oracle considerations
+
+In our efforts to implement the oracle functionality, we aimed to utilize the existing contract with as few modifications as possible, following the example provided in the Uniswap documentation and repository:
+
+- Uniswap Oracle Documentation: https://docs.uniswap.org/contracts/v2/concepts/core-concepts/oracles
+- Example Oracle Simple Contract on GitHub: https://github.com/Uniswap/v2-periphery/blob/master/contracts/examples/ExampleOracleSimple.sol.
+
+Given the necessity to maintain compatibility with older versions of Solidity, our adaptations to the standard libraries were primarily driven by the requirements of integrating this oracle. These modifications are specifically tailored to facilitate oracle integration and do not significantly impact other areas of the project. Our goal was to preserve the original functionality as much as possible while ensuring seamless compatibility with the oracle's specifications and requirements.
+
+Please reffer to [MODIFICATIONS.md](MODIFICATIONS.md) for a deeper explanation.
+
 ## Contract Details
 
 - **Contract Name**: `PriceFeeder`

@@ -123,7 +123,7 @@ Here are the commands and their uses:
 
 1. **Local Testing:**
 
-   - Command: `npm run test:local`
+   - Command: `npm run test:simple`
    - Description: This command sets up a local testing environment with a specific initialization hash. It's used for standard testing of the AMT contract functionalities in a controlled local environment.
 
    ```bash
@@ -139,18 +139,28 @@ Here are the commands and their uses:
    npm run test:coverage
    ```
 
-3. **Fork Testing:**
-
-   - Command: `npm run test:fork`
-   - Description: This command is used for fork testing, where tests are run on a fork of the mainnet or another live network. It allows testing of the AMT contracts in an environment that closely mirrors the actual blockchain, with an initialization hash reflecting the state of the contracts in the forked environment.
-
-   ```bash
-   npm run test:fork
-   ```
-
 Each of these testing commands triggers a script that dynamically modifies the initialization hash in the `PancakeLibrary.sol` contract before the tests are run. This approach ensures that the `pairFor` function within the contract computes pair addresses accurately, based on the simulated deployment environment, be it local, coverage, or a forked network.
 
 ## Troubleshooting
+
+### Issue: problems with BSC RPC on priceFeeder tests
+
+At the outset of this project, our goal was to rigorously test every facet of the loan protocol system by forking the Binance Smart Chain (BSC) via a public RPC endpoint in Hardhat, rather than relying on mock contracts. We aimed to ensure our tests remained as authentic and reflective of real-world scenarios as possible. This approach was particularly relevant given our use of a Chainlink oracle for retrieving BTC prices in USDT, underscoring the importance of accurate and realistic testing environments.
+
+However, during the development process, we encountered significant challenges with the stability and reliability of public RPC endpoints. These issues compelled us to reconsider our testing strategy for specific components. Consequently, we decided to focus this approach on the areas we deemed most critical, namely the testing of the price feeder. In contrast, for the Loan Protocol tests, we opted to mock the Chainlink oracle to ensure the stability and predictability of our test environment.
+
+Should you encounter any failures in the price feeder tests due to RPC connectivity issues, we recommend updating the BSC RPC URL in the Testing\test\01 - Loan Protocol\01-PriceFeeder.ts file, specifically at line 48, to a new public RPC endpoint:
+
+```typescript
+const BSC_URL = "https://bscrpc.com";
+```
+
+While we have found https://bscrpc.com to be a reliable endpoint, its effectiveness may vary, and it might not work for everyone. For alternatives, please consult the following resources to select a new RPC endpoint:
+
+- [BNB Chain RPCs List](https://rpc.info/bnb-chain)
+- [Chainlist for BNB Chain](https://chainlist.org/chain/56)
+
+Additionally, we have had positive experiences with https://bsc.meowrpc.com. Conversely, the RPC endpoints associated with "llama" have proven to be less reliable. Adjusting the RPC endpoint as needed will help ensure that your tests run as smoothly and accurately as possible.
 
 ### Issue: Test Fails with "call to non-contract account" Error
 
@@ -177,9 +187,8 @@ It's possible that your tests might fail with errors like "call to non-contract 
 
    ```json
    "scripts": {
-     "test:local": "node scripts/testSetUp/prepareTestEnviroment.js [NEW_HASH] && npx hardhat test",
+     "test:simple": "node scripts/testSetUp/prepareTestEnviroment.js [NEW_HASH] && npx hardhat test",
      "test:coverage": "node scripts/testSetUp/prepareTestEnviroment.js [NEW_HASH] && npx hardhat coverage",
-     "test:fork": "node scripts/testSetUp/prepareTestEnviroment.js [NEW_HASH] && npx hardhat test --config ./hardhat.config.fork.ts"
    }
    ```
 
@@ -191,7 +200,3 @@ It's possible that your tests might fail with errors like "call to non-contract 
 ### Issue: ProviderError: missing trie node
 
 As the tests uses a fork of the BSC mainnet to be as closer as posible to the real enviroment sometimes when running the complete test set this error happens in the Loan Protocol test executed at the end. To solve it exclude the basic testing moving the folder `00 - Basic system` inside the `/test` folder to the folder `_test/` and execute the test again. The test must pass without any other troubles.
-
-## Contact
-
-If you have any questions or need further clarification, please contact us at developer@autominingtoken.com

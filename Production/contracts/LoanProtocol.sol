@@ -27,7 +27,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         uint256 collateralLocked; /// @notice The amount of AMT tokens locked as collateral.
         uint256 loanTimestamp; /// @notice Timestamp when the loan was created.
         uint256 loanPrice; /// @notice Price of the total AMT used as collateral at the moment of the loan creation.
-        uint256 loanRatio; /// @notice The loan-to-value ratio used for this loan.
+        uint256 loanRatio; /// @notice The loan ratio % used for this loan.
         address priceFeeder; /// @notice the price feeder address used at the moment of loan creation
     }
 
@@ -249,8 +249,8 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Allows the owner to set a new loan ratio.
     /// @dev Only callable by the contract owner.
-    /// @param _loanRatioMin New minumiun 1/loan-to-value ratio for loans.
-    /// @param _loanRatioMax New maximun 1/loan-to-value ratio for loans.
+    /// @param _loanRatioMin New minumiun % ratio for loans.
+    /// @param _loanRatioMax New maximun % ratio for loans.
     function setLoanRatio(
         uint256 _loanRatioMin,
         uint256 _loanRatioMax

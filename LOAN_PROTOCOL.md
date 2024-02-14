@@ -40,10 +40,18 @@ Initializes the contract with necessary parameters including token addresses and
 #### createLoan
 
 ```solidity
-function createLoan(uint256 amtAmount) external
+function createLoan(uint256 amtAmount, uint256 loanRatio) external
 ```
 
-Allows a user to create a loan by locking a specified amount of AMT tokens.
+Allows a user to create a loan by locking a specified amount of AMT tokens at the specified rate.
+
+#### addCollateral
+
+```solidity
+function addCollateral(uint256 loanIndex, uint256 amount)
+```
+
+Allows the user to transfer more collateral to an already created loan to avoid liquidation.
 
 #### closeLoan
 
@@ -64,10 +72,13 @@ Allows the contract owner to update the address of the price feeder contract.
 #### setLoanRatio
 
 ```solidity
-function setLoanRatio(uint256 _loanRatio) public onlyOwner
+    function setLoanRatio(
+        uint256 _loanRatioMin,
+        uint256 _loanRatioMax
+    )
 ```
 
-Used by the contract owner to adjust the loan-to-value ratio.
+Used by the contract owner to adjust the % of the ratio allowed to the loans.
 
 ### View Functions
 
@@ -103,7 +114,8 @@ Determines if a specific loan is eligible for liquidation based on current crite
 // Example: Creating a loan
 LoanProtocol loanProtocol = LoanProtocol(loanProtocolAddress);
 uint256 amtAmount = 1000; // AMT tokens to lock as collateral
-loanProtocol.createLoan(amtAmount);
+uint256 ratio = 60; // 60% of value from collateral locked will be transfered to the loan creator in USDT
+loanProtocol.createLoan(amtAmount,ratio);
 ```
 
 ### Example: Interacting with the Loan Protocol
@@ -117,8 +129,8 @@ contract InteractingContract {
         loanProtocol = LoanProtocol(_loanProtocolAddress);
     }
 
-    function interactCreateLoan(uint256 amtAmount) public {
-        loanProtocol.createLoan(amtAmount);
+    function interactCreateLoan(uint256 amtAmount, uint256 ratio) public {
+        loanProtocol.createLoan(amtAmount,ratio);
     }
 
     function interactCloseLoan(uint256 loanIndex, uint256 amount) public {

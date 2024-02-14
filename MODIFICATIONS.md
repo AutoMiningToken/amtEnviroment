@@ -4,6 +4,17 @@
 
 This document outlines the modifications made to standard libraries in the AMT project to ensure compatibility with the Solidity version used and to adapt certain functionalities to our specific requirements.
 
+## Main reasons
+
+To implement a Time-Weighted Average Price (TWAP) oracle for a Uniswap v2 pool, we aimed to use the existing contract with minimal modifications, as referenced in:
+
+- Uniswap Documentation on Oracles: https://docs.uniswap.org/contracts/v2/concepts/core-concepts/oracles
+- Example Oracle Simple Contract in Uniswap's Repository: https://github.com/Uniswap/v2-periphery/blob/master/contracts/examples/ExampleOracleSimple.sol.
+
+Given the original contract's compatibility with older versions of Solidity, most modifications to the standard libraries were made to ensure compatibility with this oracle. These changes are largely isolated to this aspect of the project and do not significantly impact other areas. We have made a concerted effort to thoroughly document these modifications to ensure transparency and ease of understanding.
+
+After weighing the pros and cons of using the Uniswap-provided oracle versus developing our own system for interacting with on-chain Cumulative Price Data, we concluded that adjusting the existing libraries was preferable to creating an entirely new interaction system from scratch. This decision was made to leverage the proven reliability of Uniswap's oracle while minimizing development overhead and potential risks associated with a custom implementation.
+
 ## Note on Diffs
 
 The specific changes made to these files can be viewed in the diffs provided in the repository: `fixedPoint.patch` and `pancake_changes.diff`. The diff is against the original files fixedPoint.sol from the @uniswap library and from the pancakeExchangeContract of the [oficial pancake respository](https://github.com/pancakeswap/pancake-smart-contracts/tree/master/projects/exchange-protocol)
