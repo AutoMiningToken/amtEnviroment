@@ -42,9 +42,8 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @notice Mapping of user's address to their array of loans.
     mapping(address => Loan[]) public userLoans;
 
-    //uint256 public loanRatio; /// @notice The global 1/loan-to-value ratio used for creating new loans.
-    uint256 public loanRatioMin; /// @notice The global minimun 1/loan-to-value ratio used for creating new loans.
-    uint256 public loanRatioMax; /// @notice The global maximun 1/loan-to-value ratio used for creating new loans.
+    uint256 public loanRatioMin; /// @notice The global minimun % of USDT to borrow in relation with the collateral value.
+    uint256 public loanRatioMax; /// @notice The global maximun % of USDT to borrow in relation with the collateral value.
 
     /// Event emitted when a loan is created.
     event LoanCreated(
@@ -60,14 +59,17 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         uint256 collateralReturned
     );
 
+    /// Event emitted when a loan is partially closed (User return part of the collateral)
     event LoanPartialClosed(
         address indexed user,
         uint256 repaidAmount,
         uint256 collateralReturned
     );
 
+    /// Event emitted when the owner changes the price feeder contract
     event PriceFeederChanged(address newPriceFeeder);
 
+    /// Event emitted when the owner changes the minimun and maximun loan ratio to accept loans.
     event LoanRatioChanged(uint256 newLoanRatioMin, uint256 newLoanRatioMax);
 
     // Modifier that allows only the pause admin to execute a function
@@ -167,7 +169,16 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
 
         emit LoanCreated(msg.sender, loanAmount, amtAmount);
     }
-
+    /// @notice Adds additional AMT tokens as collateral to an existing loan.
+    /// @dev Transfers AMT tokens from the caller to the contract and increases the collateral amount for the specified loan.
+    ///      This function requires the caller to have a sufficient AMT balance and for the loan to exist.
+    ///      It also uses the `safeTransferFrom` method to securely transfer AMT tokens from the caller to the contract.
+    /// @param loanIndex The index of the loan in the caller's array of loans to which the collateral is being added.
+    ///                  This index must be valid and correspond to an existing loan.
+    /// @param amount The amount of AMT tokens to be added as additional collateral.
+    ///               This amount must be greater than zero and the caller must have enough tokens to cover the transfer.
+    /// @notice Emit an event to reflect the addition of collateral to a specific loan.
+    /// @notice This function is protected against reentrancy attacks.
     function addCollateral(uint256 loanIndex, uint256 amount) external nonReentrant {
         require(amount > 0, "Amount must not be zero");
         require(loanIndex < userLoans[msg.sender].length, "Invalid loan index");

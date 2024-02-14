@@ -28,8 +28,8 @@ const setInitialState = require("../../scripts/setInitialState");
 const deployOracles = require("../../scripts/deployOracles");
 describe("Tests of price feeder contract", function () {
   //This values need to be updated to work
-  const btcbPrice = 49000;
-  const amtPrice = "0.54";
+  const btcbPrice = 51700;
+  const amtPrice = "0.559550";
 
   let priceFeeder: PriceFeeder;
   let factory: PancakeFactory;

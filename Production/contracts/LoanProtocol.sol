@@ -27,7 +27,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         uint256 collateralLocked; /// @notice The amount of AMT tokens locked as collateral.
         uint256 loanTimestamp; /// @notice Timestamp when the loan was created.
         uint256 loanPrice; /// @notice Price of the total AMT used as collateral at the moment of the loan creation.
-        uint256 loanRatio; /// @notice The 1/loan-to-value ratio used for this loan.
+        uint256 loanRatio; /// @notice The loan-to-value ratio used for this loan.
         address priceFeeder; /// @notice the price feeder address used at the moment of loan creation
     }
 
@@ -42,7 +42,8 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @notice Mapping of user's address to their array of loans.
     mapping(address => Loan[]) public userLoans;
 
-    uint256 public loanRatio; /// @notice The global 1/loan-to-value ratio used for creating new loans.
+    uint256 public loanRatioMin; /// @notice The global minimun % of USDT to borrow in relation with the collateral value.
+    uint256 public loanRatioMax; /// @notice The global maximun % of USDT to borrow in relation with the collateral value.
 
     /// Event emitted when a loan is created.
     event LoanCreated(
@@ -58,15 +59,18 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         uint256 collateralReturned
     );
 
+    /// Event emitted when a loan is partially closed (User return part of the collateral)
     event LoanPartialClosed(
         address indexed user,
         uint256 repaidAmount,
         uint256 collateralReturned
     );
 
+    /// Event emitted when the owner changes the price feeder contract
     event PriceFeederChanged(address newPriceFeeder);
 
-    event LoanRatioChanged(uint256 newLoanRatio);
+    /// Event emitted when the owner changes the minimun and maximun loan ratio to accept loans.
+    event LoanRatioChanged(uint256 newLoanRatioMin, uint256 newLoanRatioMax);
 
     // Modifier that allows only the pause admin to execute a function
     modifier onlyPauseAdmin() {
@@ -81,14 +85,14 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @param _amt Address of the AMT token.
     /// @param _master Address of the Master contract
     /// @param _priceFeeder Address of the price feeder contract.
-    /// @param _loanRatio Initial 1/loan-to-value ratio for loans.
     constructor(
         address _btcb,
         address _usdt,
         address _amt,
         address _master,
         address _priceFeeder,
-        uint256 _loanRatio
+        uint256 _loanRatioMin,
+        uint256 _loanRatioMax
     ) {
         require(
             _btcb != address(0),
@@ -107,26 +111,42 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
             _priceFeeder != address(0),
             "Price feeder address must not be the zero address"
         );
-        require(_loanRatio != 0, "Loan ratio must not be zero");
+        require(_loanRatioMin > 0, "Minumun loan ratio must not be zero");
+        require(
+            _loanRatioMax >= _loanRatioMin,
+            "Maximun loan ratio must be greater than minumun"
+        );
+        require(
+            _loanRatioMax < 100,
+            "Maximun loan ratio must be lesser than 100"
+        );
         usdt = IERC20(_usdt);
         btcb = IERC20(_btcb);
         master = Master(_master);
         amt = Amt(_amt);
         priceFeeder = IPriceFeeder(_priceFeeder);
-        loanRatio = _loanRatio;
+
+        loanRatioMin = _loanRatioMin;
+        loanRatioMax = _loanRatioMax;
         _pauseAdmin = msg.sender;
     }
 
     /// @notice Allows users to create a loan by locking their AMT tokens.
     /// @dev The loan amount is based on the current AMT token price and the loan ratio. The function transfers the locked AMT tokens to the contract and sends the loan amount in USDT to the user.
     /// @param amtAmount Amount of AMT tokens user wants to lock as collateral.
-    function createLoan(uint256 amtAmount) external whenNotPaused nonReentrant {
+    /// @param loanRatio Loan ratio for the new loan to create
+    function createLoan(
+        uint256 amtAmount,
+        uint256 loanRatio
+    ) external whenNotPaused nonReentrant {
         require(amtAmount > 0, "amtAmount must be greatter than zero");
+        require(loanRatio <= loanRatioMax, "Loan ratio must be lower than maximun allowed");
+        require(loanRatio >= loanRatioMin, "Loan ratio must be greatter than minimun allowed");
         require(
             amt.balanceOf(msg.sender) >= amtAmount,
             "Not enought AMT balance"
         );
-        uint256 loanAmount = calculateLoanAmount(amtAmount);
+        uint256 loanAmount = calculateLoanAmount(amtAmount, loanRatio);
         require(loanAmount > 0, "Loan ammount too small");
         require(
             loanAmount <= usdt.balanceOf(address(this)),
@@ -148,6 +168,24 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         usdt.safeTransfer(msg.sender, loanAmount);
 
         emit LoanCreated(msg.sender, loanAmount, amtAmount);
+    }
+    /// @notice Adds additional AMT tokens as collateral to an existing loan.
+    /// @dev Transfers AMT tokens from the caller to the contract and increases the collateral amount for the specified loan.
+    ///      This function requires the caller to have a sufficient AMT balance and for the loan to exist.
+    ///      It also uses the `safeTransferFrom` method to securely transfer AMT tokens from the caller to the contract.
+    /// @param loanIndex The index of the loan in the caller's array of loans to which the collateral is being added.
+    ///                  This index must be valid and correspond to an existing loan.
+    /// @param amount The amount of AMT tokens to be added as additional collateral.
+    ///               This amount must be greater than zero and the caller must have enough tokens to cover the transfer.
+    /// @notice Emit an event to reflect the addition of collateral to a specific loan.
+    /// @notice This function is protected against reentrancy attacks.
+    function addCollateral(uint256 loanIndex, uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must not be zero");
+        require(loanIndex < userLoans[msg.sender].length, "Invalid loan index");
+        require(amt.balanceOf(msg.sender) >= amount, "insufficient AMT balance");
+        
+        amt.safeTransferFrom(msg.sender,address(this), amount);
+        userLoans[msg.sender][loanIndex].collateralLocked += amount;
     }
 
     /// @notice Allows users to close an active loan.
@@ -211,11 +249,24 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Allows the owner to set a new loan ratio.
     /// @dev Only callable by the contract owner.
-    /// @param _loanRatio New 1/loan-to-value ratio for loans.
-    function setLoanRatio(uint256 _loanRatio) public onlyOwner {
-        require(_loanRatio > 0, "Loan ratio must be greatter than zero");
-        loanRatio = _loanRatio;
-        emit LoanRatioChanged(_loanRatio);
+    /// @param _loanRatioMin New minumiun 1/loan-to-value ratio for loans.
+    /// @param _loanRatioMax New maximun 1/loan-to-value ratio for loans.
+    function setLoanRatio(
+        uint256 _loanRatioMin,
+        uint256 _loanRatioMax
+    ) public onlyOwner {
+        require(_loanRatioMin > 0, "Minumun loan ratio must not be zero");
+        require(
+            _loanRatioMax >= _loanRatioMin,
+            "Maximun loan ratio must be greater than minumun"
+        );
+        require(
+            _loanRatioMax < 100,
+            "Maximun loan ratio must be lesser than 100"
+        );
+        loanRatioMax = _loanRatioMax;
+        loanRatioMin = _loanRatioMin;
+        emit LoanRatioChanged(_loanRatioMin, _loanRatioMax);
     }
 
     /// @notice Allows the owner to liquidate a user's loan.
@@ -331,11 +382,13 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @notice Calculates the potential loan amount for a given AMT token amount.
     /// @dev Uses the price feed to get the current price of AMT tokens.
     /// @param amtAmount Amount of AMT tokens user wants to lock as collateral.
+    /// @param loanRatio Loan ratio to calculate the loan amount
     /// @return Calculated loan amount in USDT.
     function calculateLoanAmount(
-        uint256 amtAmount
+        uint256 amtAmount,
+        uint256 loanRatio
     ) internal view returns (uint256) {
         uint256 amtPrice = priceFeeder.getPrice(amtAmount);
-        return (amtPrice) / loanRatio;
+        return ((amtPrice) * loanRatio) / 100;
     }
 }
