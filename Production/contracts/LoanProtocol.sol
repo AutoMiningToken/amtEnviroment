@@ -323,7 +323,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     }
 
     /// @notice Determines if a given loan is liquidable.
-    /// @dev A loan might be liquidable if the current price of AMT drops  compared to the price at loan creation time, making the locked collateral's value less than the borrowed amount.
+    /// @dev A loan might be liquidable if the current price of the AMT used as collateral dropped enougth making the locked collateral's value less than the borrowed amount.
     /// @param loanIndex Index of the loan in the user's loans array.
     /// @param user Address of the user.
     /// @return True if the loan is liquidable, false otherwise.
@@ -340,7 +340,7 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
             ) < userLoans[user][loanIndex].amountBorrowed;
     }
 
-    /// @notice Internally called to partially close a specified loan.
+    /// @notice Internally called to partially close a specified loan, will return the correposnding amount of collateral locked for the ratio usdtReturned / usdtBorrowed
     /// @param loanIndex The index of the loan in the user's loan array.
     /// @param amount The amount of USDT being repaid.
     /// @dev Adjusts the loan's borrowed amount and collateral accordingly.
