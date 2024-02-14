@@ -94,6 +94,10 @@ This testing enviroment contain tests for the complete AMT system coverage. It t
 
 Remember, encountering issues during the initial setup or execution of commands is not uncommon, and the **Troubleshooting** section is here to assist you in overcoming these hurdles.
 
+## Loan protocol and contract deployment
+
+To streamline the deployment process of our contract suite, we've developed a bespoke deployment script. This script is accessible within our project directory at `Production\scripts\deploy.ts`. It has been meticulously crafted to work seamlessly with the addresses of the previously deployed main AMT system, thereby facilitating a smoother deployment experience. Additionally, the script `Production\scripts\estimateGas.ts` includes functionality to estimate the gas costs associated with the complete deployment process.
+
 ## Loan protocol and related contracts testing
 
 We leverage Hardhat's forking functionality to create testing environments that closely mimic real-world scenarios. As a result, these tests may take longer to execute compared to others.
