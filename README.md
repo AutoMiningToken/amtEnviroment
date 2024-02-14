@@ -46,7 +46,7 @@ npm run postinstall
 
 - In environments that do not support the patch command, you may need to manually adjust the file. Please refer to the corresponding section for guidance.
 
-1. Set Up the Testing Environment::
+2. Set Up the Testing Environment::
 
 - Repeat the installation process in the Testing directory to prepare your testing environment:
 
