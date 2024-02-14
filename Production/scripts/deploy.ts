@@ -14,18 +14,18 @@ async function main() {
     { gasLimit: 10000000 }
   );
 
-  await oracleAMTBTCB.deployed();
+  await oracleAMTBTCB.waitForDeployment();
 
   const PriceFeeder = await ethers.getContractFactory("PriceFeeder");
   const priceFeeder = await PriceFeeder.deploy(
-    oracleAMTBTCB.address,
+    await oracleAMTBTCB.getAddress(),
     contractAddresses.Amt,
     contractAddresses.Btcb,
     contractAddresses.chainLinkOracle,
     contractAddresses.LiqPool, // Pair address,
     { gasLimit: 10000000 }
   );
-  await priceFeeder.deployed();
+  await priceFeeder.waitForDeployment();
 
   const LoanProtocol = await ethers.getContractFactory("LoanProtocol");
   const loanProtocol = await LoanProtocol.deploy(
@@ -33,16 +33,17 @@ async function main() {
     contractAddresses.Usdt,
     contractAddresses.Amt,
     contractAddresses.Master,
-    priceFeeder.address,
-    2,
+    await priceFeeder.getAddress(),
+    50,
+    80,
     { gasLimit: 10000000 }
   );
 
-  await loanProtocol.deployed();
+  await loanProtocol.waitForDeployment();
 
   // Verify Oracle contract
   await run("verify:verify", {
-    address: oracleAMTBTCB.address,
+    address: await oracleAMTBTCB.getAddress(),
     constructorArguments: [
       contractAddresses.Factory,
       contractAddresses.Amt,
@@ -52,9 +53,9 @@ async function main() {
 
   // Verify PriceFeeder contract
   await run("verify:verify", {
-    address: priceFeeder.address,
+    address: await priceFeeder.getAddress(),
     constructorArguments: [
-      oracleAMTBTCB.address,
+      await oracleAMTBTCB.getAddress(),
       contractAddresses.Amt,
       contractAddresses.Btcb,
       contractAddresses.chainLinkOracle,
@@ -64,20 +65,21 @@ async function main() {
 
   // Verify LoanProtocol contract
   await run("verify:verify", {
-    address: loanProtocol.address,
+    address: await loanProtocol.getAddress(),
     constructorArguments: [
       contractAddresses.Btcb,
       contractAddresses.Usdt,
       contractAddresses.Amt,
       contractAddresses.Master,
-      priceFeeder.address,
-      2,
+      await priceFeeder.getAddress(),
+      50,
+      80,
     ],
   });
   console.log("Contracts deployed");
-  console.log("OracleAMTBTCB: ", oracleAMTBTCB.address);
-  console.log("priceFeeder: ", priceFeeder.address);
-  console.log("loanProtocol: ", loanProtocol.address);
+  console.log("OracleAMTBTCB: ", await oracleAMTBTCB.getAddress());
+  console.log("priceFeeder: ", await priceFeeder.getAddress());
+  console.log("loanProtocol: ", await loanProtocol.getAddress());
   return {
     oracleAMTBTCB,
     priceFeeder,

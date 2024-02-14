@@ -2,12 +2,14 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.4",
     "@nomiclabs/hardhat-etherscan": "^3.1.8",
     "hardhat": "^2.10.2",
     "solc": "^0.8.9"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.5.1",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.5",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@openzeppelin/contracts": "^4.9.2",
     "@uniswap/lib": "^4.0.1-alpha",

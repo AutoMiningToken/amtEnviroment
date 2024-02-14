@@ -1,7 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-import "@nomiclabs/hardhat-etherscan";
-require("dotenv").config();
+import "@nomicfoundation/hardhat-verify";
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
