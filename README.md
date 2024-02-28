@@ -133,17 +133,50 @@ Remember, encountering issues during the initial setup or execution of commands 
 
 ## Loan protocol and contract deployment
 
+### Mainet deployment
+
 To streamline the deployment process of our contract suite, we've developed a bespoke deployment script. This script is accessible within our project directory at `Production\scripts\deploy.ts`. It has been meticulously crafted to work seamlessly with the addresses of the previously deployed main AMT system, thereby facilitating a smoother deployment experience. Additionally, the script `Production\scripts\estimateGas.ts` includes functionality to estimate the gas costs associated with the complete deployment process.
 
+### Local deployment
+
+Given the system's need to interface with external contracts and pre-existing tokens (such as USDT, BTCB, Chainlink oracles, PancakeSwap router, etc.), we have developed a comprehensive local deployment script.
+
+This script not only deploys the necessary contracts but also sets up initial states for certain contracts, including PancakeSwap pair creation and liquidity provisioning. You can find this deployment script at `Testing\scripts\deploy.ts`, with configuration details in `Testing\scripts\configurations\config.basicTest.json`.
+
+To accommodate the specific requirements of the pairFor function in the PancakeLibrary.sol, we've included a custom command which adjusts the init code hash for local deployment environments.
+
+So for local deployment execute inside the testing project:
+
+```bash
+npm run deploy:local
+```
+
 ## Loan protocol and related contracts testing
+
+### Test price feeder without external RPC and interacting with a mocked chainlink oracle contract.
+
+This is the default configuration for the test, you can check it and set it up if necesary setting the flag localTest to true on `Testing/test/01 - Loan protocol/01-PriceFeeder.ts` line 31.
+
+```typescript
+const localTest = true;
+```
+
+It's scripted to work with a fixed BTC price of 47288 and AMT 0.51
+
+### Test price feeder using custom RPC to interact with original chainlink oracle
 
 We leverage Hardhat's forking functionality to create testing environments that closely mimic real-world scenarios. As a result, these tests may take longer to execute compared to others.
 
 To test the Price Feeder Contract effectively, it's essential to update the BTCB and AMT price values within the test code. Follow these steps to make the necessary changes:
 
-1. Locate the Test File: Navigate to the file Testing/test/01 - Loan protocol/01-PriceFeeder.ts.
+1. Locate the Test File: Navigate to the file `Testing/test/01 - Loan protocol/01-PriceFeeder.ts`.
+2. Update the boolean flag on line 31 localTest to false.
 
-2. Update Price Values: Modify the price constants in lines 29 and 30 to reflect the current prices. The constants are structured as follows:
+   ```typescript
+   const localTest = false;
+   ```
+
+3. Update Price Values: Modify the price constants in lines 32 and 33 to reflect the current prices. The constants are structured as follows:
 
 ```typescript
   //This values need to be updated to work
@@ -157,6 +190,8 @@ Finding Current Prices: You can easily obtain the latest prices for BTCB and AMT
 
 1. [BTCB PRICE](https://coinmarketcap.com/currencies/bitcoin/).
 2. [AMT PRICE](https://poocoin.app/tokens/0x6ae0a238a6f51df8eee084b1756a54dd8a8e85d3).
+
+In case of RPC troubles check the troubleshoting section of this readme.
 
 ## Custom test commands
 

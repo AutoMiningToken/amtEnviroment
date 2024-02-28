@@ -137,6 +137,14 @@ describe("Tests of Oracle contract", function () {
     );
   });
 
+  it("UNIT: Not owner must not be able to update oracle", async function () {
+    const wallets = await ethers.getSigners();
+    const notOwner = wallets[1];
+    await expect(oracleAMTBTCB.connect(notOwner).update()).to.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+  });
+
   it("UNIT: Consult must revert with wrong token addresses", async function () {
     await expect(oracleAMTBTCB.consult(usdt.getAddress(), 1)).to.revertedWith(
       "Oracle: INVALID_TOKEN"

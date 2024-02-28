@@ -24,6 +24,10 @@ const config: HardhatUserConfig = {
           version: "0.6.6",
           settings: {},
         },
+      "contracts/mockedContracts/FixedPointOriginal.sol": {
+        version: "0.5.16",
+        settings: {},
+      },
     },
 
     settings: { optimizer: { enabled: true, runs: 2000 } },

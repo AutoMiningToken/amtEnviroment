@@ -17,8 +17,9 @@
     "ethers": "^6.10.0"
   },
   "scripts": {
+    "deploy:local": "node scripts/testSetUp/prepareTestEnviroment.js 3c96aa5190ff88a7216ba45b8da1bdb346ea9366dad9db8e2b3139d0eb777eb6 && npx hardhat run scripts/deploy.ts",
     "test:simple": "node scripts/testSetUp/prepareTestEnviroment.js 3c96aa5190ff88a7216ba45b8da1bdb346ea9366dad9db8e2b3139d0eb777eb6 && npx hardhat test",
-    "test:coverage": "node scripts/testSetUp/prepareTestEnviroment.js b8f3afd778ed7df5e15b49db296ee3bc4cdf50d73fefdacda4d9066a726268a4 && npx hardhat coverage",
+    "test:coverage": "node scripts/testSetUp/prepareTestEnviroment.js f13b90c06e2519cfd6611b9a488e9d0e7684cb08f14c0d8119e15f8cd60618fe && npx hardhat coverage",
     "postinstall": "node ./apply-patch.js"
   }
 }

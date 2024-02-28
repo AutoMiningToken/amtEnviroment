@@ -28,8 +28,9 @@ const setInitialState = require("../../scripts/setInitialState");
 const deployOracles = require("../../scripts/deployOracles");
 describe("Tests of price feeder contract", function () {
   //This values need to be updated to work
-  const btcbPrice = 51700;
-  const amtPrice = "0.559550";
+  const localTest = true;
+  let btcbPrice = 51700;
+  let amtPrice = "0.559550";
 
   let priceFeeder: PriceFeeder;
   let factory: PancakeFactory;
@@ -45,19 +46,21 @@ describe("Tests of price feeder contract", function () {
   let oracleUSDTBTCB: Oracle;
   let loanProtocol: LoanProtocol;
 
-  const BSC_URL = "https://bscrpc.com";
+  const BSC_URL = "https://bsc.meowrpc.com";
   this.beforeEach(async function () {
-    const bscProvider = new ethers.JsonRpcProvider(BSC_URL);
-    const latestBlock = (await bscProvider.getBlockNumber()) - 100;
+    if (!localTest) {
+      const bscProvider = new ethers.JsonRpcProvider(BSC_URL);
+      const latestBlock = (await bscProvider.getBlockNumber()) - 100;
 
-    await network.provider.send("hardhat_reset", [
-      {
-        forking: {
-          jsonRpcUrl: BSC_URL,
-          blockNumber: latestBlock,
+      await network.provider.send("hardhat_reset", [
+        {
+          forking: {
+            jsonRpcUrl: BSC_URL,
+            blockNumber: latestBlock,
+          },
         },
-      },
-    ]);
+      ]);
+    }
 
     ({ usdt, btcb } = await deployExternalToken());
     ({ factory, router, wbnb } = await deployPancake(usdt, btcb));
@@ -83,9 +86,13 @@ describe("Tests of price feeder contract", function () {
       btcb,
       amt,
       master,
-      true
+      !localTest
     ));
 
+    if (localTest) {
+      btcbPrice = 47288;
+      amtPrice = "0.51";
+    }
     await advanceTime(3600);
     await oracleAMTBTCB.update();
   });

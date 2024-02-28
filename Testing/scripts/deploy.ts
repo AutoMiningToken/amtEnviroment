@@ -1,24 +1,80 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
+import chai from "chai";
+import {
+  ERC20,
+  LiquidityAmt,
+  LoanProtocol,
+  Master,
+  PancakeFactory,
+  PancakeRouter,
+  PriceFeeder,
+  TestERC20,
+  TestLiqPoolAndRouter,
+  WBNB,
+} from "../typechain-types";
+import { Amt } from "../typechain-types";
+import { BurnVault } from "../typechain-types";
+import { BigNumber as nativeBigNumber } from "bignumber.js";
+import fs from "fs";
+import { Oracle } from "../typechain-types";
+import { BigNumberish } from "ethers";
+const { expect } = chai;
+const deployPancake = require("./deployPancakeSwapV2");
+const deployExternalToken = require("./deployExternalTokens");
+const mainDeploy = require("./deployMainAmtContracts");
+const setInitialState = require("./setInitialState");
+const deployOracles = require("./deployOracles");
 
+let priceFeeder: PriceFeeder;
+let factory: PancakeFactory;
+let router: PancakeRouter;
+let usdt: TestERC20;
+let btcb: TestERC20;
+let wbnb: WBNB;
+let amt: Amt;
+let liqAmt: LiquidityAmt;
+let burnVault: BurnVault;
+let master: Master;
+let oracleAMTBTCB: Oracle;
+let oracleUSDTBTCB: Oracle;
+let loanProtocol: LoanProtocol;
+
+async function advanceTime(time: number) {
+  await network.provider.send("evm_increaseTime", [time]);
+  await network.provider.send("evm_mine");
+}
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-  const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
+  ({ usdt, btcb } = await deployExternalToken());
+  ({ factory, router, wbnb } = await deployPancake(usdt, btcb));
 
-  const lockedAmount = ethers.parseEther("1");
-
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
-
-  await lock.waitForDeployment();
-
-  console.log(
-    `Lock with 1 ETH and unlock timestamp ${unlockTime} deployed to ${lock.getAddress()}`
+  ({ amt, liqAmt, burnVault, master } = await mainDeploy(btcb, router));
+  const configPath = "./scripts/configurations/config.basicTest.json";
+  const rawData = fs.readFileSync(configPath, "utf-8");
+  const config = JSON.parse(rawData);
+  await setInitialState(
+    config,
+    usdt,
+    btcb,
+    amt,
+    liqAmt,
+    burnVault,
+    master,
+    router,
+    factory
   );
+  ({ oracleAMTBTCB, priceFeeder, loanProtocol } = await deployOracles(
+    factory,
+    usdt,
+    btcb,
+    amt,
+    master,
+    false
+  ));
+
+  await advanceTime(3600);
+  await oracleAMTBTCB.update();
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
