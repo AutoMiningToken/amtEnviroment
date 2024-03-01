@@ -53,6 +53,25 @@ For an in-depth explanation of the Price Feeder used in the Loan Protocol, see [
 
 For an in-depth explanation of the small modifications to FixedFloat.sol library and pancake contracts for testing purposes, see [MODIFICATIONS.md](MODIFICATIONS.md).
 
+## User roles and authorizations
+
+### Oracle
+
+This contract is a crucial component of the PriceFeeder system, relying heavily on the update operation, which is restricted to the contract owner through the onlyOwner modifier. We acknowledge the centralization of this operation but commit to executing updates regularly and automatically to maintain system integrity. Centralization here is a deliberate choice to prevent price manipulation attempts, underscoring our commitment to system reliability over decentralization in this aspect
+
+### PriceFeeder
+
+This contract operates without specific access control measures, reflecting its role in providing unguarded price data to other components of the system.
+
+### Loan protocol
+
+Serving as the system's core, it implements several access-controlled operations:
+
+- Exclusive to the owner, including setting a pause admin (setPauseAdmin), updating the price feeder (setPriceFeeder), adjusting loan-to-value ratios (setLoanRatio), liquidate a loan (LiquidateLoan), withdraw usdt used to create new loans (withdrawUsdt), get the benefits from the amt locked in the contract (charge).
+- The contract safeguards user assets by prohibiting the withdrawal of AMT collateral by the owner, ensuring users can close loans.
+- Changes to the price feeder affect only future loans, preserving the conditions of existing ones
+- Pause Functionality: Exclusively managed by a designated pauseAdmin, which may differ from the owner, this feature halts new loan creations in compliance with Chainlink recommendations for managing significant price volatility. However, users retain the ability to close existing loans even during pauses
+
 ## Installation
 
 The project is structured into two main directories: `Production` and `Testing`. Each directory is a self-contained Hardhat project and requires separate setup.
