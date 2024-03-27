@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "./IPriceFeeder.sol";
 import "./Amt.sol";
 import "./Master.sol";
@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /// @notice A contract to allow users to borrow USDT against their AMT tokens.
 /// @author Auto Mining Token
 /// @dev Uses price feed for AMT token to calculate loan amounts.
-contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
+contract LoanProtocol is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeERC20 for Amt;
 
