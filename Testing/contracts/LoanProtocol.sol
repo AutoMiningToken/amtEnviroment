@@ -367,12 +367,12 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
 
         uint256 amtToReturn = (userLoan.collateralLocked * amount) /
             userLoan.amountBorrowed;
+        userLoan.amountBorrowed -= amount;
+        userLoan.collateralLocked -= amtToReturn;
         usdt.safeTransferFrom(msg.sender, address(this), amount);
         amt.safeTransfer(msg.sender, amtToReturn);
 
         emit LoanPartialClosed(msg.sender, amount, amtToReturn);
-        userLoan.amountBorrowed -= amount;
-        userLoan.collateralLocked -= amtToReturn;
     }
 
     /// @notice Internally called to completely close a specified loan.
@@ -382,12 +382,6 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         Loan storage userLoan = userLoans[msg.sender][loanIndex];
 
         uint256 totalRepayment = userLoan.amountBorrowed;
-
-        usdt.safeTransferFrom(msg.sender, address(this), totalRepayment);
-        amt.safeTransfer(msg.sender, userLoan.collateralLocked);
-
-        emit LoanClosed(msg.sender, totalRepayment, userLoan.collateralLocked);
-
         delete userLoans[msg.sender][loanIndex];
         if (loanIndex < userLoans[msg.sender].length - 1) {
             userLoans[msg.sender][loanIndex] = userLoans[msg.sender][
@@ -395,6 +389,10 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
             ];
         }
         userLoans[msg.sender].pop();
+        usdt.safeTransferFrom(msg.sender, address(this), totalRepayment);
+        amt.safeTransfer(msg.sender, userLoan.collateralLocked);
+
+        emit LoanClosed(msg.sender, totalRepayment, userLoan.collateralLocked);
     }
 
     /// @notice Calculates the potential loan amount for a given AMT token amount.
