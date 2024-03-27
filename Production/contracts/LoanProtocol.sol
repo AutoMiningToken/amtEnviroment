@@ -379,9 +379,11 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @param loanIndex The index of the loan in the user's loan array.
     /// @dev Transfers back the full collateral and marks the loan as closed.
     function totalCloseLoan(uint256 loanIndex) internal {
-        Loan storage userLoan = userLoans[msg.sender][loanIndex];
+        Loan memory userLoan = userLoans[msg.sender][loanIndex];
 
         uint256 totalRepayment = userLoan.amountBorrowed;
+        uint256 collateralLocked = userLoan.collateralLocked;
+
         delete userLoans[msg.sender][loanIndex];
         if (loanIndex < userLoans[msg.sender].length - 1) {
             userLoans[msg.sender][loanIndex] = userLoans[msg.sender][
@@ -390,9 +392,9 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         }
         userLoans[msg.sender].pop();
         usdt.safeTransferFrom(msg.sender, address(this), totalRepayment);
-        amt.safeTransfer(msg.sender, userLoan.collateralLocked);
+        amt.safeTransfer(msg.sender, collateralLocked);
 
-        emit LoanClosed(msg.sender, totalRepayment, userLoan.collateralLocked);
+        emit LoanClosed(msg.sender, totalRepayment, collateralLocked);
     }
 
     /// @notice Calculates the potential loan amount for a given AMT token amount.

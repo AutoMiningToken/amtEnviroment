@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "./IPriceFeeder.sol";
 import "./Amt.sol";
 import "./Master.sol";
@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /// @notice A contract to allow users to borrow USDT against their AMT tokens.
 /// @author Auto Mining Token
 /// @dev Uses price feed for AMT token to calculate loan amounts.
-contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
+contract LoanProtocol is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeERC20 for Amt;
 
@@ -379,9 +379,11 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @param loanIndex The index of the loan in the user's loan array.
     /// @dev Transfers back the full collateral and marks the loan as closed.
     function totalCloseLoan(uint256 loanIndex) internal {
-        Loan storage userLoan = userLoans[msg.sender][loanIndex];
+        Loan memory userLoan = userLoans[msg.sender][loanIndex];
 
         uint256 totalRepayment = userLoan.amountBorrowed;
+        uint256 collateralLocked = userLoan.collateralLocked;
+
         delete userLoans[msg.sender][loanIndex];
         if (loanIndex < userLoans[msg.sender].length - 1) {
             userLoans[msg.sender][loanIndex] = userLoans[msg.sender][
@@ -390,9 +392,9 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
         }
         userLoans[msg.sender].pop();
         usdt.safeTransferFrom(msg.sender, address(this), totalRepayment);
-        amt.safeTransfer(msg.sender, userLoan.collateralLocked);
+        amt.safeTransfer(msg.sender, collateralLocked);
 
-        emit LoanClosed(msg.sender, totalRepayment, userLoan.collateralLocked);
+        emit LoanClosed(msg.sender, totalRepayment, collateralLocked);
     }
 
     /// @notice Calculates the potential loan amount for a given AMT token amount.

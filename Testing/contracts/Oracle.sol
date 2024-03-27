@@ -3,14 +3,14 @@ pragma solidity 0.8.9;
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/lib/contracts/libraries/FixedPoint.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@uniswap/v2-periphery/contracts/libraries/UniswapV2OracleLibrary.sol";
 import "./Pancake-exchange-contracts/contracts/libraries/PancakeLibrary.sol";
 
 /// @title Oracle for computing average price over a fixed time window using Uniswap V2 pairs
 /// @notice This contract calculates the average price of a token pair over a fixed period, updating once per period
 /// @dev This contract is based on the Uniswap V2 oracle example and uses cumulative prices for calculations
-contract Oracle is Ownable {
+contract Oracle is Ownable2Step {
     using FixedPoint for *;
 
     uint public constant PERIOD = 1 hours;

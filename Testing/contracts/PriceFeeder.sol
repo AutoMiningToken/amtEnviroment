@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "./IPriceFeeder.sol";
 import "./IOracle.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
@@ -14,7 +14,7 @@ import "hardhat/console.sol";
 /// @notice This contract provides price feed functionality for AMT-BTCB in USDT using chainlink oracles to get the price of USDT BTCB and an Oracle that uses uniswap V2 TWAP.
 
 /// @dev Inherits from OpenZeppelin's Ownable for access control and utilizes Chainlink for reliable price feeds.
-contract PriceFeeder is Ownable, IPriceFeeder {
+contract PriceFeeder is Ownable2Step, IPriceFeeder {
     using SafeERC20 for IERC20;
 
     IOracle internal immutable oracleAmtBtcb;
