@@ -72,6 +72,7 @@ async function main(
     oracleAMTBTCB,
     priceFeeder,
     loanProtocol,
+    chainLinkMocked,
   };
 }
 

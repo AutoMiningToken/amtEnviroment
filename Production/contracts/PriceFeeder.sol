@@ -15,7 +15,6 @@ import "hardhat/console.sol";
 
 /// @dev Inherits from OpenZeppelin's Ownable for access control and utilizes Chainlink for reliable price feeds.
 contract PriceFeeder is Ownable, IPriceFeeder {
-
     using SafeERC20 for IERC20;
 
     IOracle internal immutable oracleAmtBtcb;
@@ -81,11 +80,19 @@ contract PriceFeeder is Ownable, IPriceFeeder {
 
         amountOut = numerator / denominator;
     }
-
     /// @notice Fetches the latest BTCB price from the Chainlink oracle.
     /// @return The latest BTCB price scaled to 8 decimal places.
     function getLatestBTCBPrice() public view returns (uint256) {
-        (, int price, , , ) = priceFeedUsdtBtcb.latestRoundData();
+        (
+            uint80 roundID,
+            int256 price,
+            ,
+            uint256 timestamp,
+            uint80 answeredInRound
+        ) = priceFeedUsdtBtcb.latestRoundData();
+        require(answeredInRound >= roundID, "Stale price");
+        require(timestamp != 0, "Round not complete");
+        require(price > 0, "Chainlink price reporting 0");
         return uint256(price / 10 ** 8); // Scale to 8 decimal places
     }
 
@@ -110,5 +117,4 @@ contract PriceFeeder is Ownable, IPriceFeeder {
 
         return priceAmtBtcbUsdt;
     }
-
 }

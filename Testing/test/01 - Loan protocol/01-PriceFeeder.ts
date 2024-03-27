@@ -11,6 +11,7 @@ import {
   TestERC20,
   TestLiqPoolAndRouter,
   WBNB,
+  MockChainlinkOracle,
 } from "../../typechain-types";
 import { Amt } from "../../typechain-types";
 import { BurnVault } from "../../typechain-types";
@@ -43,6 +44,7 @@ describe("Tests of price feeder contract", function () {
   let burnVault: BurnVault;
   let master: Master;
   let oracleAMTBTCB: Oracle;
+  let chainLinkMocked: MockChainlinkOracle;
   let oracleUSDTBTCB: Oracle;
   let loanProtocol: LoanProtocol;
 
@@ -80,14 +82,8 @@ describe("Tests of price feeder contract", function () {
       router,
       factory
     );
-    ({ oracleAMTBTCB, priceFeeder, loanProtocol } = await deployOracles(
-      factory,
-      usdt,
-      btcb,
-      amt,
-      master,
-      !localTest
-    ));
+    ({ oracleAMTBTCB, priceFeeder, loanProtocol, chainLinkMocked } =
+      await deployOracles(factory, usdt, btcb, amt, master, !localTest));
 
     if (localTest) {
       btcbPrice = 47288;
@@ -286,5 +282,25 @@ describe("Tests of price feeder contract", function () {
 
   it("UNIT: Price feeder getPrice must revert with amountIn equal to zero", async function () {
     await expect(priceFeeder.getPrice(0)).to.revertedWith("Invalid amountIn");
+  });
+
+  it("UNIT: Price feeder getPrice must revert if not answeredInRound >= roundId", async function () {
+    await chainLinkMocked.setOtherMockValues(9, 0, 1, 8);
+    await expect(priceFeeder.getPrice(ethers.parseEther("1"))).to.revertedWith(
+      "Stale price"
+    );
+  });
+  it("UNIT: Price feeder getPrice must revert if round not complete", async function () {
+    await chainLinkMocked.setOtherMockValues(5, 0, 0, 6);
+    await expect(priceFeeder.getPrice(ethers.parseEther("1"))).to.revertedWith(
+      "Round not complete"
+    );
+  });
+  it("UNIT: Price feeder getPrice must revert if price report is zero", async function () {
+    await chainLinkMocked.setOtherMockValues(5, 0, 1, 6);
+    await chainLinkMocked.setMockPrice(0);
+    await expect(priceFeeder.getPrice(ethers.parseEther("1"))).to.revertedWith(
+      "Chainlink price reporting 0"
+    );
   });
 });

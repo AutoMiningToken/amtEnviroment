@@ -201,7 +201,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -214,7 +214,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       amt,
       [user.address, await loanProtocol.getAddress()],
@@ -238,10 +238,10 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), 49)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), 49, 0)
     ).to.revertedWith("Loan ratio must be greatter than minimun allowed");
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), 81)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), 81, 0)
     ).to.revertedWith("Loan ratio must be lower than maximun allowed");
   });
   it("UNIT: Users must not create loans with borrowed ammount equal to zero", async function () {
@@ -265,7 +265,7 @@ describe("Test of loan protocol", function () {
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
 
     await expect(
-      loanProtocol.connect(user).createLoan(10000, rate)
+      loanProtocol.connect(user).createLoan(10000, rate, 0)
     ).to.revertedWith("Loan ammount too small");
   });
 
@@ -291,7 +291,7 @@ describe("Test of loan protocol", function () {
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
 
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.revertedWith("Loan protocol has not enought balance");
   });
 
@@ -317,7 +317,7 @@ describe("Test of loan protocol", function () {
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
 
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       amt,
       [user.address, await loanProtocol.getAddress()],
@@ -354,7 +354,7 @@ describe("Test of loan protocol", function () {
       };
       await loanProtocol
         .connect(user)
-        .createLoan(ethers.parseEther(amtAmount), rate);
+        .createLoan(ethers.parseEther(amtAmount), rate, 0);
       expectedLoans.push(expectedLoan);
     }
 
@@ -387,7 +387,7 @@ describe("Test of loan protocol", function () {
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -412,7 +412,7 @@ describe("Test of loan protocol", function () {
     );
 
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -453,7 +453,7 @@ describe("Test of loan protocol", function () {
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -492,7 +492,7 @@ describe("Test of loan protocol", function () {
     const rate = 50n;
 
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -539,7 +539,7 @@ describe("Test of loan protocol", function () {
       };
       await loanProtocol
         .connect(user)
-        .createLoan(ethers.parseEther(amtAmount), rate);
+        .createLoan(ethers.parseEther(amtAmount), rate, 0);
       expectedLoans.push(expectedLoan);
     }
 
@@ -635,7 +635,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -689,7 +689,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -724,7 +724,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -792,7 +792,7 @@ describe("Test of loan protocol", function () {
       };
       await loanProtocol
         .connect(user)
-        .createLoan(ethers.parseEther(amtAmount), rate);
+        .createLoan(ethers.parseEther(amtAmount), rate, 0);
       expectedLoans.push(expectedLoan);
     }
 
@@ -824,7 +824,7 @@ describe("Test of loan protocol", function () {
       };
       await loanProtocol
         .connect(user)
-        .createLoan(ethers.parseEther(amtAmount), rate);
+        .createLoan(ethers.parseEther(amtAmount), rate, 0);
       expectedLoans.push(expectedLoan);
     }
 
@@ -957,7 +957,7 @@ describe("Test of loan protocol", function () {
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1003,7 +1003,7 @@ describe("Test of loan protocol", function () {
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1063,7 +1063,7 @@ describe("Test of loan protocol", function () {
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1100,7 +1100,7 @@ describe("Test of loan protocol", function () {
       .approve(loanProtocol.getAddress(), ethers.parseEther("200"));
 
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("200"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("200"), rate, 0)
     )
       .to.emit(loanProtocol, "LoanCreated")
       .withArgs(
@@ -1125,7 +1125,7 @@ describe("Test of loan protocol", function () {
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1172,9 +1172,9 @@ describe("Test of loan protocol", function () {
     const [owner, user] = wallets;
 
     await loanProtocol.emergencyStop();
-    await expect(loanProtocol.connect(user).createLoan(1, 2)).to.revertedWith(
-      "Pausable: paused"
-    );
+    await expect(
+      loanProtocol.connect(user).createLoan(1, 2, 0)
+    ).to.revertedWith("Pausable: paused");
   });
 
   it("UNIT: owner must  able to set a new pause admin", async function () {
@@ -1183,9 +1183,9 @@ describe("Test of loan protocol", function () {
 
     await loanProtocol.setPauseAdmin(newPauseAdmin.address);
     await loanProtocol.connect(newPauseAdmin).emergencyStop();
-    await expect(loanProtocol.connect(user).createLoan(1, 2)).to.revertedWith(
-      "Pausable: paused"
-    );
+    await expect(
+      loanProtocol.connect(user).createLoan(1, 2, 0)
+    ).to.revertedWith("Pausable: paused");
   });
 
   it("UNIT: pause admin must be able to resume operations", async function () {
@@ -1194,9 +1194,9 @@ describe("Test of loan protocol", function () {
 
     await loanProtocol.setPauseAdmin(newPauseAdmin.address);
     await loanProtocol.connect(newPauseAdmin).emergencyStop();
-    await expect(loanProtocol.connect(user).createLoan(1, 2)).to.revertedWith(
-      "Pausable: paused"
-    );
+    await expect(
+      loanProtocol.connect(user).createLoan(1, 2, 0)
+    ).to.revertedWith("Pausable: paused");
     const rate = 50n;
     loanProtocol.connect(newPauseAdmin).resumeOperations();
     usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("1000"));
@@ -1204,7 +1204,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalance(
       amt,
       user.address,
@@ -1267,7 +1267,7 @@ describe("Test of loan protocol", function () {
 
     //Create loans to give the loan protocol a total ammount of 6000 AMT
     await expect(
-      loanProtocol.connect(user1).createLoan(ethers.parseEther("2000"), rate)
+      loanProtocol.connect(user1).createLoan(ethers.parseEther("2000"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user1.address, await loanProtocol.getAddress()],
@@ -1278,7 +1278,7 @@ describe("Test of loan protocol", function () {
     );
 
     await expect(
-      loanProtocol.connect(user2).createLoan(ethers.parseEther("2000"), rate)
+      loanProtocol.connect(user2).createLoan(ethers.parseEther("2000"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user2.address, await loanProtocol.getAddress()],
@@ -1289,7 +1289,7 @@ describe("Test of loan protocol", function () {
     );
 
     await expect(
-      loanProtocol.connect(user3).createLoan(ethers.parseEther("2000"), rate)
+      loanProtocol.connect(user3).createLoan(ethers.parseEther("2000"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user3.address, await loanProtocol.getAddress()],
@@ -1494,7 +1494,7 @@ describe("Test of loan protocol", function () {
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
 
     await expect(
-      loanProtocol.connect(user).createLoan(0, rate)
+      loanProtocol.connect(user).createLoan(0, rate, 0)
     ).to.revertedWith("amtAmount must be greatter than zero");
   });
 
@@ -1512,7 +1512,7 @@ describe("Test of loan protocol", function () {
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
 
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.revertedWith("Not enought AMT balance");
   });
 
@@ -1531,7 +1531,7 @@ describe("Test of loan protocol", function () {
     //Send USDT to the loan protocol
     await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("40"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("100"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1609,7 +1609,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1682,7 +1682,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1718,7 +1718,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1754,7 +1754,7 @@ describe("Test of loan protocol", function () {
       .connect(user)
       .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
     await expect(
-      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate)
+      loanProtocol.connect(user).createLoan(ethers.parseEther("1"), rate, 0)
     ).to.changeTokenBalances(
       usdt,
       [user.address, await loanProtocol.getAddress()],
@@ -1847,7 +1847,7 @@ describe("Test of loan protocol", function () {
       );
 
     await expect(
-      loanProtocolWithMaliciousToken.connect(user).createLoan(10000000, 50)
+      loanProtocolWithMaliciousToken.connect(user).createLoan(10000000, 50, 0)
     ).to.revertedWith("ReentrancyGuard: reentrant call");
 
     //addCollateral
@@ -1865,7 +1865,9 @@ describe("Test of loan protocol", function () {
         ethers.parseEther("1")
       );
 
-    await loanProtocolWithMaliciousToken.connect(user).createLoan(10000000, 50);
+    await loanProtocolWithMaliciousToken
+      .connect(user)
+      .createLoan(10000000, 50, 0);
 
     await maliciousERC20.setFunctionToTest(2);
     await expect(
@@ -1886,5 +1888,64 @@ describe("Test of loan protocol", function () {
     await expect(
       loanProtocolWithMaliciousToken.connect(user).closeLoan(0, amountToReturn)
     ).to.revertedWith("ReentrancyGuard: reentrant call");
+  });
+
+  it("UNIT: createLoan will revert if slippage condition is not accepted", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+    await amt.transfer(user.address, ethers.parseEther("1"));
+
+    //Send USDT to the loan protocol
+    await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("150000"));
+
+    const priceFromPriceFeeder = await priceFeeder.getPrice(
+      ethers.parseEther("1")
+    );
+    const rate = 50n;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+    await expect(
+      loanProtocol
+        .connect(user)
+        .createLoan(
+          ethers.parseEther("1"),
+          rate,
+          (priceFromPriceFeeder * rate) / 100n + 1n
+        )
+    ).to.revertedWith("Transaction fail due to slippage");
+  });
+
+  it("BORDER CASE: createLoan will be accepted with exact slippage condition", async function () {
+    const wallets = await ethers.getSigners();
+    const [owner, user] = wallets;
+    await amt.transfer(user.address, ethers.parseEther("1"));
+
+    //Send USDT to the loan protocol
+    await usdt.transfer(loanProtocol.getAddress(), ethers.parseEther("150000"));
+
+    const priceFromPriceFeeder = await priceFeeder.getPrice(
+      ethers.parseEther("1")
+    );
+    const rate = 50n;
+    await amt
+      .connect(user)
+      .approve(loanProtocol.getAddress(), ethers.parseEther("1"));
+    await expect(
+      loanProtocol
+        .connect(user)
+        .createLoan(
+          ethers.parseEther("1"),
+          rate,
+          (priceFromPriceFeeder * rate) / 100n
+        )
+    ).to.changeTokenBalances(
+      usdt,
+      [user.address, await loanProtocol.getAddress()],
+      [
+        (priceFromPriceFeeder * rate) / 100n,
+        BigInt(0) - (priceFromPriceFeeder * rate) / 100n,
+      ]
+    );
   });
 });

@@ -135,18 +135,30 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @dev The loan amount is based on the current AMT token price and the loan ratio. The function transfers the locked AMT tokens to the contract and sends the loan amount in USDT to the user.
     /// @param amtAmount Amount of AMT tokens user wants to lock as collateral.
     /// @param loanRatio Loan ratio for the new loan to create
+    /// @param minUsdtToReceive Minimum amount of USDT to receive after the loan is created. (Slippage)
     function createLoan(
         uint256 amtAmount,
-        uint256 loanRatio
+        uint256 loanRatio,
+        uint256 minUsdtToReceive
     ) external whenNotPaused nonReentrant {
         require(amtAmount > 0, "amtAmount must be greatter than zero");
-        require(loanRatio <= loanRatioMax, "Loan ratio must be lower than maximun allowed");
-        require(loanRatio >= loanRatioMin, "Loan ratio must be greatter than minimun allowed");
+        require(
+            loanRatio <= loanRatioMax,
+            "Loan ratio must be lower than maximun allowed"
+        );
+        require(
+            loanRatio >= loanRatioMin,
+            "Loan ratio must be greatter than minimun allowed"
+        );
         require(
             amt.balanceOf(msg.sender) >= amtAmount,
             "Not enought AMT balance"
         );
         uint256 loanAmount = calculateLoanAmount(amtAmount, loanRatio);
+        require(
+            loanAmount >= minUsdtToReceive,
+            "Transaction fail due to slippage"
+        );
         require(loanAmount > 0, "Loan ammount too small");
         require(
             loanAmount <= usdt.balanceOf(address(this)),
@@ -179,12 +191,18 @@ contract LoanProtocol is Ownable, Pausable, ReentrancyGuard {
     ///               This amount must be greater than zero and the caller must have enough tokens to cover the transfer.
     /// @notice Emit an event to reflect the addition of collateral to a specific loan.
     /// @notice This function is protected against reentrancy attacks.
-    function addCollateral(uint256 loanIndex, uint256 amount) external nonReentrant {
+    function addCollateral(
+        uint256 loanIndex,
+        uint256 amount
+    ) external nonReentrant {
         require(amount > 0, "Amount must not be zero");
         require(loanIndex < userLoans[msg.sender].length, "Invalid loan index");
-        require(amt.balanceOf(msg.sender) >= amount, "insufficient AMT balance");
-        
-        amt.safeTransferFrom(msg.sender,address(this), amount);
+        require(
+            amt.balanceOf(msg.sender) >= amount,
+            "insufficient AMT balance"
+        );
+
+        amt.safeTransferFrom(msg.sender, address(this), amount);
         userLoans[msg.sender][loanIndex].collateralLocked += amount;
     }
 
