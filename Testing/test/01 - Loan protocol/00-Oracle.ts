@@ -131,18 +131,38 @@ describe("Tests of Oracle contract", function () {
     }
   }
 
-  it("UNIT: Owner must not be able to update oracle if period not elapsed", async function () {
+  it("UNIT: Updater must not be able to update oracle if period not elapsed", async function () {
     await expect(oracleAMTBTCB.update()).to.revertedWith(
       "Oracle: PERIOD_NOT_ELAPSED"
     );
   });
 
-  it("UNIT: Not owner must not be able to update oracle", async function () {
+  it("UNIT: Not updater must not be able to update oracle", async function () {
     const wallets = await ethers.getSigners();
     const notOwner = wallets[1];
     await expect(oracleAMTBTCB.connect(notOwner).update()).to.revertedWith(
-      "Ownable: caller is not the owner"
+      "Oracle: NOT_ALLOWED"
     );
+  });
+
+  it("UNIT: Not updater must not be able to change updater", async function () {
+    const wallets = await ethers.getSigners();
+    const notOwner = wallets[1];
+    await expect(
+      oracleAMTBTCB.connect(notOwner).setUpdater(notOwner.address)
+    ).to.revertedWith("Oracle: NOT_ALLOWED");
+  });
+
+  it("UNIT: Updater must be able to change the updater", async function () {
+    const wallets = await ethers.getSigners();
+    const notOwner = wallets[1];
+    await expect(oracleAMTBTCB.connect(notOwner).update()).to.revertedWith(
+      "Oracle: NOT_ALLOWED"
+    );
+
+    await oracleAMTBTCB.setUpdater(notOwner.address);
+    await expect(oracleAMTBTCB.update()).to.revertedWith("Oracle: NOT_ALLOWED");
+    expect(await oracleAMTBTCB.updater()).to.equal(notOwner.address);
   });
 
   it("UNIT: Consult must revert with wrong token addresses", async function () {

@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+pragma solidity =0.6.6;
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/lib/contracts/libraries/FixedPoint.sol";
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@uniswap/v2-periphery/contracts/libraries/UniswapV2OracleLibrary.sol";
 import "./Pancake-exchange-contracts/contracts/libraries/PancakeLibrary.sol";
 
 /// @title Oracle for computing average price over a fixed time window using Uniswap V2 pairs
 /// @notice This contract calculates the average price of a token pair over a fixed period, updating once per period
 /// @dev This contract is based on the Uniswap V2 oracle example and uses cumulative prices for calculations
-contract Oracle is Ownable2Step {
+contract Oracle {
     using FixedPoint for *;
 
     uint public constant PERIOD = 1 hours;
@@ -25,12 +24,15 @@ contract Oracle is Ownable2Step {
     FixedPoint.uq112x112 public price0Average;
     FixedPoint.uq112x112 public price1Average;
 
+    address public updater; //Address allowed to execute the update function
+
     /// @notice Initializes the Oracle contract with Uniswap V2 pair
     /// @param factory The address of the Uniswap V2 factory
     /// @param tokenA The address of the first token of the pair
     /// @param tokenB The address of the second token of the pair
     /// @dev The contract uses PancakeLibrary for finding the pair address
     constructor(address factory, address tokenA, address tokenB) public {
+        updater = msg.sender;
         IUniswapV2Pair _pair = IUniswapV2Pair(
             PancakeLibrary.pairFor(factory, tokenA, tokenB)
         );
@@ -50,7 +52,8 @@ contract Oracle is Ownable2Step {
 
     /// @notice Updates the average prices for the token pair
     /// @dev This function should be called periodically to update the price averages
-    function update() external onlyOwner {
+    function update() external {
+        require(msg.sender == updater, "Oracle: NOT_ALLOWED");
         (
             uint price0Cumulative,
             uint price1Cumulative,
@@ -73,6 +76,14 @@ contract Oracle is Ownable2Step {
         price0CumulativeLast = price0Cumulative;
         price1CumulativeLast = price1Cumulative;
         blockTimestampLast = blockTimestamp;
+    }
+
+    /// @notice changes the updater address
+    /// @dev only previous updater will be able to call this function
+    /// @param _updater new updater address
+    function setUpdater(address _updater) external {
+        require(msg.sender == updater, "Oracle: NOT_ALLOWED");
+        updater = _updater;
     }
 
     // note this will always return 0 before update has been called successfully for the first time.
